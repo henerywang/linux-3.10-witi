@@ -326,7 +326,11 @@ VOID APMlmeDynamicTxRateSwitching(RTMP_ADAPTER *pAd)
 			tends to choose the mcs lower than the optimal one.
 			by increasing the thresholds, the chosen mcs will be closer to the optimal mcs
 		*/
+#if defined (CONFIG_RT_WITI_HACK_MCS)
+		if (1)
+#else
 		if ((Rssi > -65) && (pCurrTxRate->Mode >= MODE_HTMIX))
+#endif
 		{
 #ifdef NOISE_TEST_ADJUST
 			TrainUp		= (pCurrTxRate->TrainUp << 1);
@@ -606,7 +610,12 @@ VOID APQuickResponeForRateUpExec(
 		pCurrTxRate = PTX_RA_LEGACY_ENTRY(pTable, CurrRateIdx);
 
 #ifdef DOT11_N_SUPPORT
+
+#if defined (CONFIG_RT_WITI_HACK_MCS)
+		if (1)
+#else
 		if ((Rssi > -65) && (pCurrTxRate->Mode >= MODE_HTMIX))
+#endif
 		{
 			TrainUp		= (pCurrTxRate->TrainUp + (pCurrTxRate->TrainUp >> 1));
 			TrainDown	= (pCurrTxRate->TrainDown + (pCurrTxRate->TrainDown >> 1));
@@ -1131,7 +1140,11 @@ VOID MlmeDynamicTxRateSwitching(
 			algorithm tends to choose the mcs lower than the optimal one.
 			by increasing the thresholds, the chosen mcs will be closer to the optimal mcs
 		*/
+#if defined (CONFIG_RT_WITI_HACK_MCS)
+		if (1)
+#else
 		if ((Rssi > -65) && (pCurrTxRate->Mode >= MODE_HTMIX))
+#endif
 		{
 			TrainUp = (pCurrTxRate->TrainUp + (pCurrTxRate->TrainUp >> 1));
 			TrainDown = (pCurrTxRate->TrainDown + (pCurrTxRate->TrainDown >> 1));
@@ -1320,7 +1333,11 @@ VOID StaQuickResponeForRateUpExec(
 		pCurrTxRate = PTX_RA_LEGACY_ENTRY(pTable, CurrRateIdx);
 
 #ifdef DOT11_N_SUPPORT
+#if defined (CONFIG_RT_WITI_HACK_MCS)
+		if (1)
+#else
 		if ((Rssi > -65) && (pCurrTxRate->Mode >= MODE_HTMIX))
+#endif
 		{
 			TrainUp		= (pCurrTxRate->TrainUp + (pCurrTxRate->TrainUp >> 1));
 			TrainDown	= (pCurrTxRate->TrainDown + (pCurrTxRate->TrainDown >> 1));

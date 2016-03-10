@@ -5077,9 +5077,15 @@ static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 		}
 	}
 
+#if defined(CONFIG_RT_WITI_HACK_VGA)
+	if (((pAd->chipCap.avg_rssi_all > -55) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
+		|| ((pAd->chipCap.avg_rssi_all > -58) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
+		|| ((pAd->chipCap.avg_rssi_all > -61) && (pAd->CommonCfg.BBPCurrentBW == BW_20))) 
+#else
 	if (((pAd->chipCap.avg_rssi_all > -62) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
 		|| ((pAd->chipCap.avg_rssi_all > -65) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
 		|| ((pAd->chipCap.avg_rssi_all > -68) && (pAd->CommonCfg.BBPCurrentBW == BW_20))) 
+#endif
 	{
 		RTMP_BBP_IO_WRITE32(pAd, RXO_R18, 0xF000A990);
 		if (pAd->CommonCfg.BBPCurrentBW == BW_80) {
@@ -5087,7 +5093,6 @@ static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 				mode = 0xA0; /* BW80::eLNA lower VGA/PD */
 			else
 				mode = 0xA1; /* BW80::iLNA lower VGA/PD */
-				
 			RTMP_BBP_IO_READ32(pAd, AGC1_R26, &value);
 			value = (value & ~0xF) | 0x3;
 			RTMP_BBP_IO_WRITE32(pAd, AGC1_R26, value);	
@@ -5130,9 +5135,9 @@ static BOOLEAN dynamic_channel_model_adjust(RTMP_ADAPTER *pAd)
 		__FUNCTION__, mode));
 
 #if defined(CONFIG_RT_WITI_HACK_VGA)
-	if (((pAd->chipCap.avg_rssi_all <= -76) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
-		|| ((pAd->chipCap.avg_rssi_all <= -79) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
-		|| ((pAd->chipCap.avg_rssi_all <= -82) && (pAd->CommonCfg.BBPCurrentBW == BW_20)))
+	if (((pAd->chipCap.avg_rssi_all <= -65) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
+		|| ((pAd->chipCap.avg_rssi_all <= -70) && (pAd->CommonCfg.BBPCurrentBW == BW_40))
+		|| ((pAd->chipCap.avg_rssi_all <= -73) && (pAd->CommonCfg.BBPCurrentBW == BW_20)))
 		no_dynamic_vga = TRUE;
 #else
 	if (((pAd->chipCap.avg_rssi_all <= -70) && (pAd->CommonCfg.BBPCurrentBW == BW_80))
