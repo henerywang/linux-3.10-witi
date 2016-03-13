@@ -14829,23 +14829,16 @@ INT set_agc_vga_clamp_proc(RTMP_ADAPTER *pAd, PSTRING arg)
 
 #ifdef MT76x2
 	if (IS_MT76x2(pAd)) {
-		UCHAR agc_vga_ori = 0x48;	// default value for most fw
-		
-		switch (val)
-		{
-		case 1:
-			agc_vga_ori = 0x3e;
-			break;
-		case 2:
-			agc_vga_ori = 0x34;
-			break;
-		case 3:
-			agc_vga_ori = 0x2a;
-			break;
-		case 4:
-			agc_vga_ori = 0x20;
-			break;
-		}
+		UCHAR agc_vga_init = (pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 + pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_1) / 2;
+		UINT agc_vga_step = (agc_vga_init - 0x20) / 10;
+		UCHAR agc_vga_ori = agc_vga_init;
+
+		if (val < 0)
+		    val=0;
+		if (val > 10)
+		    val=10;
+		agc_vga_ori = agc_vga_init - (agc_vga_step * val);
+
 		pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 = agc_vga_ori;
 		pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_1 = agc_vga_ori;
 		pAd->chipCap.dynamic_chE_mode = 0xEE;	// force update VGA
