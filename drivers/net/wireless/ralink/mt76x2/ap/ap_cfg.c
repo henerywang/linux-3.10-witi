@@ -14829,7 +14829,7 @@ INT set_agc_vga_clamp_proc(RTMP_ADAPTER *pAd, PSTRING arg)
 
 #ifdef MT76x2
 	if (IS_MT76x2(pAd)) {
-		UCHAR agc_vga_init = (pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_0 + pAd->CommonCfg.lna_vga_ctl.agc_vga_ori_1) / 2;
+		UCHAR agc_vga_init = (pAd->CommonCfg.lna_vga_ctl.agc_vga_init_0 + pAd->CommonCfg.lna_vga_ctl.agc_vga_init_1) / 2;
 		UINT agc_vga_step = (agc_vga_init - 0x20) / 10;
 		UCHAR agc_vga_ori = agc_vga_init;
 
