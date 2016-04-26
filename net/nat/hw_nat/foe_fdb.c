@@ -562,6 +562,7 @@ int FoeUnBindEntry(struct hwnat_args *opt)
 
 int _FoeDropEntry(unsigned int entry_num)
 {
+#if defined (CONFIG_RALINK_MT7621)
 	struct FoeEntry *entry;
 	
 	entry = &PpeFoeBase[entry_num];
@@ -573,6 +574,9 @@ int _FoeDropEntry(unsigned int entry_num)
 #endif
 
 	return HWNAT_SUCCESS;
+#else
+	return HWNAT_FAIL;
+#endif
 }
 
 EXPORT_SYMBOL(_FoeDropEntry);
