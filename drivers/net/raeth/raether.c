@@ -98,6 +98,10 @@ void apll_xtal_enable(void);
 void setup_fpga_gsw(void);
 #endif
 
+#if defined(CONFIG_RALINK_RT6855) || defined(CONFIG_RALINK_MT7620)
+void rt_gsw_init(void);
+#endif
+
 /* SKB allocation API selection */
 #if !defined (CONFIG_ETH_SKB_ALLOC_SELECT)
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)) && defined (CONFIG_MT7621_ASIC)
@@ -4220,6 +4224,7 @@ void setup_internal_gsw(void)
         regValue |= (3<<16); //Enable INTR
 	mii_mgr_write(31, 0x7808 ,regValue);
 }
+#endif
 
 #if defined (CONFIG_RALINK_MT7621)
 #if defined (CONFIG_GE1_TRGMII_FORCE_1200)
@@ -4920,7 +4925,6 @@ void rt305x_esw_init(void)
 
 #endif
 }
-#endif
 
 #elif defined (CONFIG_ARCH_MT7623)
 void mt7623_pinmux_set(void)
