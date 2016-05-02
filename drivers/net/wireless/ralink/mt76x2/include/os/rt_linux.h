@@ -128,7 +128,7 @@ typedef struct usb_ctrlrequest devctrlrequest;
 
 #ifdef RTMP_MAC_PCI
 
-#define AP_PROFILE_PATH_RBUS		"/etc/Wireless/RT2860/RT2860AP.dat"
+#define AP_PROFILE_PATH_RBUS		"/etc/wireless/mt7602e/mt7602e.dat"
 
 #define AP_PROFILE_PATH		"/etc/wireless/mt7602e/mt7602e.dat"
 
