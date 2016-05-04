@@ -623,8 +623,9 @@ uint32_t PpeExtIfPingPongHandler(struct sk_buff * skb)
 	if (VirIfIdx < MAX_IF_NUM && DstPort[VirIfIdx]!=NULL) {
 		skb->dev = DstPort[VirIfIdx];
 	} else {
-		if (printk_ratelimit())
-			printk("HNAT: unknow interface (VirIfIdx=%d)\n", VirIfIdx);
+	/* something wrong: proto must be 802.11q, interface index must be < MAX_IF_NUM and exist, 
+	    don`t touch this packets and return to normal path before corrupt in detag code
+	*/
 		return 1;
 	}
 
