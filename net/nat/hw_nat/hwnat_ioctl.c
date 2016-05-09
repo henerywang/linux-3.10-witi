@@ -72,9 +72,6 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 	case HW_NAT_UNBIND_ENTRY:
 		opt->result = FoeUnBindEntry(opt);
 		break;
-	case HW_NAT_DROP_ENTRY:
-		opt->result = FoeDropEntry(opt);
-		break;
 	case HW_NAT_INVALID_ENTRY:
 		opt->result = FoeDelEntryByNum(opt->entry_num);
 		break;
@@ -82,8 +79,14 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 		FoeDumpEntry(opt->entry_num);
 		break;
 #if defined (CONFIG_HNAT_V2)
+	case HW_NAT_DROP_ENTRY:
+		opt->result = FoeDropEntry(opt);
+		break;
 	case HW_NAT_DUMP_CACHE_ENTRY:
 		FoeDumpCacheEntry();
+		break;
+	case HW_NAT_GET_AC_CNT:
+		opt3->result = PpeGetAGCnt(opt3);
 		break;
 #endif
 	case HW_NAT_DEBUG:	/* For Debug */
@@ -136,10 +139,6 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 		    PpeSetRuleSize(opt4->pre_acl, opt4->pre_meter,
 				   opt4->pre_ac, opt4->post_meter,
 				   opt4->post_ac);
-		break;
-#else
-	case HW_NAT_GET_AC_CNT:
-		opt3->result = PpeGetAGCnt(opt3);
 		break;
 #endif
 	case HW_NAT_BIND_THRESHOLD:

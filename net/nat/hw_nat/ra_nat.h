@@ -23,7 +23,8 @@
  */
 enum DstPort {
 	DP_RA0 = 11,
-#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS) || defined (CONFIG_MBSS_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS) || defined (CONFIG_MBSS_SUPPORT) \
+|| defined (CONFIG_MT76X2_AP_MBSS)
 	DP_RA1 = 12,
 	DP_RA2 = 13,
 	DP_RA3 = 14,
@@ -40,16 +41,22 @@ enum DstPort {
 	DP_RA14 = 25,
 	DP_RA15 = 26,
 #endif // CONFIG_RT2860V2_AP_MBSS //
-#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_RTPCI_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_RTPCI_AP_WDS) || defined (CONFIG_WDS_SUPPORT) \
+|| defined (CONFIG_MT76X2_AP_WDS)
+
 	DP_WDS0 = 27,
 	DP_WDS1 = 28,
 	DP_WDS2 = 29,
 	DP_WDS3 = 30,
 #endif // CONFIG_RT2860V2_AP_WDS //
-#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_RTPCI_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_RTPCI_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT) \
+|| defined (CONFIG_MT76X2_AP_APCLI)
+
 	DP_APCLI0 = 31,
 #endif // CONFIG_RT2860V2_AP_APCLI //
-#if defined (CONFIG_RT2860V2_AP_MESH)
+#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_MT76X2_AP_MBSS)\
+|| defined (CONFIG_MT76X2_AP_MESH)
+
 	DP_MESH0 = 32,
 #endif // CONFIG_RT2860V2_AP_MESH //
 	DP_RAI0 = 33,
@@ -57,6 +64,7 @@ enum DstPort {
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
     defined (CONFIG_MT7610_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS)  || \
+    defined (CONFIG_MT76X2_AP_MBSS) || \
     defined (CONFIG_MBSS_SUPPORT)
 	DP_RAI1 = 34,
 	DP_RAI2 = 35,
@@ -77,6 +85,7 @@ enum DstPort {
 #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
     defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
     defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
+    defined (CONFIG_MT76X2_AP_WDS) || \
     defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 	DP_WDSI0 = 49,
 	DP_WDSI1 = 50,
@@ -86,11 +95,13 @@ enum DstPort {
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
+    defined (CONFIG_MT76X2_AP_APCLI) ||\
     defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 	DP_APCLII0 = 53,
 #endif // CONFIG_RTDEV_AP_APCLI //
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
+    defined (CONFIG_MT76X2_AP_MESH) ||\
     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
     defined (CONFIG_MT7610_AP_MESH)
 	DP_MESHI0 = 54,

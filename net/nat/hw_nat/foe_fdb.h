@@ -96,10 +96,12 @@ enum FoeIPAct {
 	IPV4_HNAPT = 0,
 	IPV4_HNAT = 1,
 	IPV6_1T_ROUTE = 2,
+#if defined (CONFIG_HNAT_V2)
 	IPV4_DSLITE = 3,
 	IPV6_3T_ROUTE = 4,
 	IPV6_5T_ROUTE = 5,
 	IPV6_6RD = 7,
+#endif
 };
 
 #define IS_IPV4_HNAPT(x)	(((x)->bfib1.pkt_type == IPV4_HNAPT) ? 1: 0)
@@ -663,7 +665,9 @@ struct FoeEntry {
 	union {
 		struct bf_info_blk1 bfib1;	//common header
 		struct _ipv4_hnapt ipv4_hnapt;	// nat & napt share same data structure
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		struct _ipv6_1t_route ipv6_1t_route;
+#endif
 	};
 };
 
@@ -697,7 +701,9 @@ void FoeDumpEntry(uint32_t Index);
 int FoeGetAllEntries(struct hwnat_args *opt);
 int FoeBindEntry(struct hwnat_args *opt);
 int FoeUnBindEntry(struct hwnat_args *opt);
+#if defined (CONFIG_HNAT_V2)
 int FoeDropEntry(struct hwnat_args *opt);
+#endif
 int FoeDelEntryByNum(uint32_t entry_num);
 void FoeTblClean(void);
 int FoeDumpCacheEntry(void);

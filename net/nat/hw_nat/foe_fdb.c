@@ -560,6 +560,7 @@ int FoeUnBindEntry(struct hwnat_args *opt)
 	return HWNAT_SUCCESS;
 }
 
+#if defined (CONFIG_HNAT_V2)
 int _FoeDropEntry(unsigned int entry_num)
 {
 #if defined (CONFIG_RALINK_MT7621)
@@ -569,9 +570,7 @@ int _FoeDropEntry(unsigned int entry_num)
 	
 	entry->ipv4_hnapt.iblk2.dp = 7;
 
-#if defined (CONFIG_HNAT_V2)
 	PpeSetCacheEbl(); /*clear HWNAT cache*/
-#endif
 
 	return HWNAT_SUCCESS;
 #else
@@ -586,7 +585,7 @@ int FoeDropEntry(struct hwnat_args *opt)
 {
 	return _FoeDropEntry(opt->entry_num);
 }
-
+#endif
 
 int FoeDelEntryByNum(uint32_t entry_num)
 {

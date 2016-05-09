@@ -417,7 +417,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 	if (skb->dev == DstPort[DP_RA0]) {
 		VirIfIdx = DP_RA0;
 	}
-#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS) || defined (CONFIG_MBSS_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_MT76X2_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS) || defined (CONFIG_MBSS_SUPPORT)
 	else if (skb->dev == DstPort[DP_RA1]) {
 		VirIfIdx = DP_RA1;
 	} else if (skb->dev == DstPort[DP_RA2]) {
@@ -450,7 +450,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		VirIfIdx = DP_RA15;
 	}
 #endif // CONFIG_RT2860V2_AP_MBSS || CONFIG_RTPCI_AP_MBSS //
-#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_RTPCI_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_MT76X2_AP_WDS) || defined (CONFIG_RTPCI_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 	else if (skb->dev == DstPort[DP_WDS0]) {
 		VirIfIdx = DP_WDS0;
 	} else if (skb->dev == DstPort[DP_WDS1]) {
@@ -461,12 +461,12 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 		VirIfIdx = DP_WDS3;
 	}
 #endif
-#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_RTPCI_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_MT76X2_AP_APCLI) || defined (CONFIG_RTPCI_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 	else if (skb->dev == DstPort[DP_APCLI0]) {
 		VirIfIdx = DP_APCLI0;
 	}
 #endif // CONFIG_RT2860V2_AP_APCLI //
-#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_RTPCI_AP_MESH)
+#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_MT76X2_AP_MESH) || defined (CONFIG_RTPCI_AP_MESH)
 	else if (skb->dev == DstPort[DP_MESH0]) {
 		VirIfIdx = DP_MESH0;
 	}
@@ -480,6 +480,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
     defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
     defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
+    defined (CONFIG_MT76X2_AP_MBSS) || \
     defined (CONFIG_RTPCI_AP_MBSS)  || defined (CONFIG_MBSS_SUPPORT)
 	else if (skb->dev == DstPort[DP_RAI1]) {
 		VirIfIdx = DP_RAI1;
@@ -517,6 +518,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
     defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
     defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
+    defined (CONFIG_MT76X2_AP_APCLI) ||  \
     defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 	else if (skb->dev == DstPort[DP_APCLII0]) {
 		VirIfIdx = DP_APCLII0;
@@ -525,6 +527,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
     defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
     defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
+    defined (CONFIG_MT76X2_AP_WDS) || \
     defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 	else if (skb->dev == DstPort[DP_WDSI0]) {
 		VirIfIdx = DP_WDSI0;
@@ -539,6 +542,7 @@ uint32_t PpeExtIfRxHandler(struct sk_buff * skb)
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
     defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
     defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
+    defined (CONFIG_MT76X2_AP_MESH) || \
     defined (CONFIG_MT7610_AP_MESH)
 	else if (skb->dev == DstPort[DP_MESHI0]) {
 		VirIfIdx = DP_MESHI0;
@@ -2484,6 +2488,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
     if (strncmp(skb->dev->name, "rai", 3) == 0) {
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
 	defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
+	defined (CONFIG_MT76X2_AP_MESH) || \
 	defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH)
 	if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_MESH) {
 	    offset =
@@ -2495,6 +2500,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
 	    defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
 	    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
+	    defined (CONFIG_MT76X2_AP_APCLI) || \
 	    defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 	    if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_APCLI) {
 		offset =
@@ -2505,6 +2511,7 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
 		defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
 		defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
+		defined (CONFIG_MT76X2_AP_WDS) || \
 		defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 		if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_WDS) {
 		    offset =
@@ -2519,21 +2526,21 @@ uint32_t PpeSetExtIfNum(struct sk_buff * skb, struct FoeEntry * foe_entry)
 #endif // CONFIG_RTDEV_MII || CONFIG_RTDEV_USB || CONFIG_RTDEV_PCI || CONFIG_RTDEV
 
 	if (strncmp(skb->dev->name, "ra", 2) == 0) {
-#if defined (CONFIG_RT2860V2_AP_MESH)
+#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_MT76X2_AP_MESH)
 	    if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_MESH) {
 		offset =
 		    (RTMP_GET_PACKET_IF(skb) - MIN_NET_DEVICE_FOR_MESH +
 		     DP_MESH0);
 	    } else
 #endif // CONFIG_RT2860V2_AP_MESH //
-#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_MT76X2_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 		if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_APCLI) {
 		    offset =
 			(RTMP_GET_PACKET_IF(skb) -
 			 MIN_NET_DEVICE_FOR_APCLI + DP_APCLI0);
 		} else
 #endif // CONFIG_RT2860V2_AP_APCLI //
-#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_MT76X2_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 		    if (RTMP_GET_PACKET_IF(skb) >= MIN_NET_DEVICE_FOR_WDS) {
 			offset =
 			    (RTMP_GET_PACKET_IF(skb) - MIN_NET_DEVICE_FOR_WDS +
@@ -3482,7 +3489,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 #if !defined (CONFIG_RA_HW_NAT_WIFI_NEW_ARCH)
 #if defined (CONFIG_RA_HW_NAT_WIFI)
 	DstPort[DP_RA0] = ra_dev_get_by_name("ra0");
-#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS) || defined (CONFIG_MBSS_SUPPORT)
+#if defined (CONFIG_MT76X2_AP_MBSS) || defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS) || defined (CONFIG_MBSS_SUPPORT)
 	DstPort[DP_RA1] = ra_dev_get_by_name("ra1");
 	DstPort[DP_RA2] = ra_dev_get_by_name("ra2");
 	DstPort[DP_RA3] = ra_dev_get_by_name("ra3");
@@ -3503,16 +3510,16 @@ static void PpeSetDstPort(uint32_t Ebl)
 	DstPort[DP_RA15] = ra_dev_get_by_name("ra15");
 #endif
 #endif
-#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
+#if defined (CONFIG_MT76X2_AP_WDS) ||  defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 	DstPort[DP_WDS0] = ra_dev_get_by_name("wds0");
 	DstPort[DP_WDS1] = ra_dev_get_by_name("wds1");
 	DstPort[DP_WDS2] = ra_dev_get_by_name("wds2");
 	DstPort[DP_WDS3] = ra_dev_get_by_name("wds3");
 #endif
-#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
+#if defined (CONFIG_MT76X2_AP_APCLI) || defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 	DstPort[DP_APCLI0] = ra_dev_get_by_name("apcli0");
 #endif
-#if defined (CONFIG_RT2860V2_AP_MESH)
+#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_MT76X2_AP_MESH)
 	DstPort[DP_MESH0] = ra_dev_get_by_name("mesh0");
 #endif
 #if defined (CONFIG_RTDEV_MII) || defined (CONFIG_RTDEV_USB) || \
@@ -3521,6 +3528,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 #if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
 	defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
 	defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
+	defined (CONFIG_MT76X2_AP_MBSS) || \
 	defined (CONFIG_RTPCI_AP_MBSS) || defined (CONFIG_MT7610_AP_MBSS) || \
 	defined (CONFIG_MBSS_SUPPORT)
 	DstPort[DP_RAI1] = ra_dev_get_by_name("rai1");
@@ -3543,12 +3551,14 @@ static void PpeSetDstPort(uint32_t Ebl)
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
 	defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
 	defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
+	defined (CONFIG_MT76X2_AP_APCLI) || \
 	defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 	DstPort[DP_APCLII0] = ra_dev_get_by_name("apclii0");
 #endif // CONFIG_RTDEV_AP_APCLI //
 #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
     defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
     defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
+    defined (CONFIG_MT76X2_AP_WDS) || \
     defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 	DstPort[DP_WDSI0] = ra_dev_get_by_name("wdsi0");
 	DstPort[DP_WDSI1] = ra_dev_get_by_name("wdsi1");
@@ -3559,6 +3569,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
 	defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
 	defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
+	defined (CONFIG_MT76X2_AP_MESH) || \
 	defined (CONFIG_MT7610_AP_MESH)
 	DstPort[DP_MESHI0] = ra_dev_get_by_name("meshi0");
 #endif // CONFIG_RTDEV_AP_MESH //
@@ -3628,6 +3639,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 	    dev_put(DstPort[DP_RA0]);
 	}
 #if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS) || \
+    defined (CONFIG_MT76X2_AP_MBSS) || \
     defined (CONFIG_MBSS_SUPPORT)
 	if (DstPort[DP_RA1] != NULL) {
 	    dev_put(DstPort[DP_RA1]);
@@ -3651,6 +3663,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 	    dev_put(DstPort[DP_RA7]);
 	}
 #if defined (CONFIG_RALINK_RT3883) || defined (CONFIG_RALINK_RT3352) || \
+	defined (CONFIG_MT76X2_AP_MBSS) || \
 	defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7620) || \
 	defined (CONFIG_MBSS_SUPPORT)
 	
@@ -3680,7 +3693,9 @@ static void PpeSetDstPort(uint32_t Ebl)
 	}
 #endif
 #endif
-#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_WDS_SUPPORT) \
+	|| defined (CONFIG_MT76X2_AP_WDS)
+
 	if (DstPort[DP_WDS0] != NULL) {
 	    dev_put(DstPort[DP_WDS0]);
 	}
@@ -3694,12 +3709,16 @@ static void PpeSetDstPort(uint32_t Ebl)
 	    dev_put(DstPort[DP_WDS3]);
 	}
 #endif
-#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
+#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT) \
+	|| defined (CONFIG_MT76X2_AP_APCLI)
+
 	if (DstPort[DP_APCLI0] != NULL) {
 	    dev_put(DstPort[DP_APCLI0]);
 	}
 #endif
-#if defined (CONFIG_RT2860V2_AP_MESH)
+#if defined (CONFIG_RT2860V2_AP_MESH) \
+	|| defined (CONFIG_MT76X2_AP_MESH)
+
 	if (DstPort[DP_MESH0] != NULL) {
 	    dev_put(DstPort[DP_MESH0]);
 	}
@@ -3713,6 +3732,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 	defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
 	defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
 	defined (CONFIG_MT7610_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS)  || \
+	defined (CONFIG_MT76X2_AP_MBSS) || \
 	defined (CONFIG_MBSS_SUPPORT)
 	if (DstPort[DP_RAI1] != NULL) {
 	    dev_put(DstPort[DP_RAI1]);
@@ -3764,6 +3784,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 #if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
 	defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
 	defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
+	defined (CONFIG_MT76X2_AP_APCLI) || \
 	defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 	if (DstPort[DP_APCLII0] != NULL) {
 	    dev_put(DstPort[DP_APCLII0]);
@@ -3771,6 +3792,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 #endif // CONFIG_RTDEV_AP_APCLI //
 #if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
     defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
+    defined (CONFIG_MT76X2_AP_WDS) || \
     defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
     defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 	if (DstPort[DP_WDSI0] != NULL) {
@@ -3790,6 +3812,7 @@ static void PpeSetDstPort(uint32_t Ebl)
 #if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
 	defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
 	defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
+	defined (CONFIG_MT76X2_AP_MESH) || \
 	defined (CONFIG_MT7610_AP_MESH)
 
 	if (DstPort[DP_MESHI0] != NULL) {
