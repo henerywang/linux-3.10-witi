@@ -71,6 +71,8 @@ config RALINK_MT7620
 	select SYS_SUPPORTS_LITTLE_ENDIAN
 	select HW_HAS_PCI
 	select SWAP_IO_SPACE
+	select ARCH_HAVE_CUSTOM_GPIO_H
+	select ARCH_WANT_OPTIONAL_GPIOLIB
 	help
 	  Ralink evaluation board based on MT7620
 
@@ -101,6 +103,8 @@ config RALINK_MT7621
 #	select ARCH_REQUIRE_GPIOLIB
 #	select PINCTRL
 #	select PINCTRL_RT2880
+	select ARCH_HAVE_CUSTOM_GPIO_H
+	select ARCH_WANT_OPTIONAL_GPIOLIB
 	help
 	  Ralink evaluation board based on MT7621
 
