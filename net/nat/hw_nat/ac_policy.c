@@ -25,6 +25,10 @@
 #include "ac_policy.h"
 #include "frame_engine.h"
 
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+extern int ipv6_offload;
+#endif
+
 static AcPlcyNode AcPlcyList = {.List = LIST_HEAD_INIT(AcPlcyList.List) };
 static char AcFreeList[8];
 
@@ -190,19 +194,19 @@ void PpeSetPreAcEbl(uint32_t PreAcEbl)
 
 	/* Pre-Account engine for unicast/multicast/broadcast flow */
 	if (PreAcEbl == 1) {
-		PpeFlowSet |= (BIT_FUC_PREA | BIT_FMC_PREA | BIT_FBC_PREA);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV6_PE_EN);
+		PpeFlowSet |= (BIT_FUC_PREA);
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+		if (ipv6_offload)
+			PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
 		RegModifyBits(PPE_POL_CFG, DFL_POL_AC_PRD, 16, 16);	//period
 		RegModifyBits(PPE_POL_CFG, 1, 13, 1);	//enable Pre-account
 
 	} else {
 		PpeFlowSet &= ~(BIT_FUC_PREA | BIT_FMC_PREA | BIT_FBC_PREA);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_PE_EN);
 #endif
-
 		/* We have to set period=0 first */
 		RegModifyBits(PPE_POL_CFG, 0, 16, 16);	//period
 		RegModifyBits(PPE_POL_CFG, 0, 13, 1);	//disable Pre-account 
@@ -262,20 +266,19 @@ void PpeSetPostAcEbl(uint32_t PostAcEbl)
 
 	/* Post-Account engine for unicast/multicast/broadcast flow */
 	if (PostAcEbl == 1) {
-		PpeFlowSet |= (BIT_FUC_POSA | BIT_FMC_POSA | BIT_FBC_POSA);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
-		PpeFlowSet |= (BIT_IPV6_PE_EN);
+		PpeFlowSet |= (BIT_FUC_POSA);
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+		if (ipv6_offload)
+			PpeFlowSet |= (BIT_IPV6_PE_EN);
 #endif
-
 		RegModifyBits(PPE_POL_CFG, DFL_POL_AC_PRD, 16, 16);	//period
 		RegModifyBits(PPE_POL_CFG, 1, 12, 1);	//enable Post-account
 
 	} else {
 		PpeFlowSet &= ~(BIT_FUC_POSA | BIT_FMC_POSA | BIT_FBC_POSA);
-#if defined(CONFIG_RA_HW_NAT_IPV6)
+#if defined (CONFIG_RA_HW_NAT_IPV6)
 		PpeFlowSet &= ~(BIT_IPV6_PE_EN);
 #endif
-
 		/* We have to set period=0 first */
 		RegModifyBits(PPE_POL_CFG, 0, 16, 16);	//period
 		RegModifyBits(PPE_POL_CFG, 0, 12, 1);	//disable Post-account
@@ -324,10 +327,9 @@ void inline PpeInsAcEntry(void *Rule, enum AcType Type)
 		Index = PpeGetPostAcEnd();
 	}
 
-	printk("Policy Table Base=%08X Offset=%d\n", POLICY_TBL_BASE,
-	       Index * 8);
-	printk("%08X: %08X\n", POLICY_TBL_BASE + Index * 8, *p);
-	printk("%08X: %08X\n", POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));
+	NAT_DEBUG("Policy Table Base=%08X Offset=%d\n", POLICY_TBL_BASE, Index * 8);
+	NAT_DEBUG("%08X: %08X\n", POLICY_TBL_BASE + Index * 8, *p);
+	NAT_DEBUG("%08X: %08X\n", POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));
 
 	RegWrite(POLICY_TBL_BASE + Index * 8, *p);	/* Low bytes */
 	RegWrite(POLICY_TBL_BASE + Index * 8 + 4, *(p + 1));	/* High bytes */
@@ -338,7 +340,6 @@ void inline PpeInsAcEntry(void *Rule, enum AcType Type)
 	} else {
 		PpeSetPostAcEnd(Index + 1);
 	}
-
 }
 
 /*
@@ -494,19 +495,10 @@ uint32_t AcGetCnt(AcPlcyNode * SearchNode, enum AcCntType AcCntType)
 
 found:
 	if (AcCntType == AC_BYTE_CNT) {
-#ifdef CONFIG_RALINK_MT7621
 		result = RegRead(AC_BASE + node->AgIdx * 8);
-		result |= RegRead(AC_BASE + node->AgIdx * 8 + 4);
-#else
-		result = RegRead(AC_BASE + node->AgIdx * 8);
-#endif
 		return result;
 	} else {		/* Packet Count */
-#ifdef CONFIG_RALINK_MT7621
-		result = RegRead(AC_BASE + node->AgIdx * 12);
-#else
 		result = RegRead(AC_BASE + node->AgIdx * 8 + 4);
-#endif
 		return result;
 	}
 }

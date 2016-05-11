@@ -20,20 +20,19 @@
 #include "foe_fdb.h"
 #include "util.h"
 #include "ra_nat.h"
+
 #if defined (CONFIG_PPE_MCAST)
 #include "mcast_tbl.h"
 #endif
 
-unsigned char bind_dir = BIDIRECTION;
-unsigned short lan_vid = CONFIG_RA_HW_NAT_LAN_VLANID;
-unsigned short wan_vid = CONFIG_RA_HW_NAT_WAN_VLANID;
-#if defined (CONFIG_RA_HW_NAT_PPTP_L2TP)
-int DebugLevel = 0;
-#else
-int DebugLevel = 0; //it's annoying :(
+extern int udp_offload;
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+extern int ipv6_offload;
 #endif
-extern unsigned int DebugPPP;
-extern int log_level;
+extern uint16_t lan_vid;
+extern uint16_t wan_vid;
+extern uint32_t DebugLevel;
+
 #if !defined (CONFIG_HNAT_V2)
 int pre_acl_start_addr;
 int pre_ac_start_addr;
@@ -45,8 +44,7 @@ int post_mtr_start_addr;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
 long HwNatIoctl(struct file *file, unsigned int cmd, unsigned long arg)
 #else
-int
-HwNatIoctl(struct inode *inode, struct file *filp,
+int HwNatIoctl(struct inode *inode, struct file *filp,
 	   unsigned int cmd, unsigned long arg)
 #endif
 {
@@ -73,10 +71,13 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 		opt->result = FoeUnBindEntry(opt);
 		break;
 	case HW_NAT_INVALID_ENTRY:
-		opt->result = FoeDelEntryByNum(opt->entry_num);
+		opt->result = FoeDelEntry(opt);
 		break;
 	case HW_NAT_DUMP_ENTRY:
 		FoeDumpEntry(opt->entry_num);
+		break;
+	case HW_NAT_DEBUG:	/* For Debug */
+		DebugLevel = opt->debug;
 		break;
 #if defined (CONFIG_HNAT_V2)
 	case HW_NAT_DROP_ENTRY:
@@ -88,11 +89,7 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 	case HW_NAT_GET_AC_CNT:
 		opt3->result = PpeGetAGCnt(opt3);
 		break;
-#endif
-	case HW_NAT_DEBUG:	/* For Debug */
-		DebugLevel = opt->debug;
-		break;
-#if !defined (CONFIG_HNAT_V2)
+#else
 	case HW_NAT_DSCP_REMARK:
 		opt3->result = PpeSetDscpRemarkEbl(opt3->enable);
 		break;
@@ -162,23 +159,24 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 				       opt4->foe_udp_dlta, opt4->foe_fin_dlta);
 		break;
 	case HW_NAT_BIND_DIRECTION:
-		bind_dir = opt4->bind_dir;
+		opt4->result = HWNAT_FAIL;
 		break;
 	case HW_NAT_VLAN_ID:
 		wan_vid = opt4->wan_vid;
 		lan_vid = opt4->lan_vid;
+		opt4->result = HWNAT_SUCCESS;
 		break;
 #if defined (CONFIG_PPE_MCAST)
 	case HW_NAT_MCAST_INS:
 		foe_mcast_entry_ins(opt5->mc_vid, opt5->dst_mac, opt5->mc_px_en, opt5->mc_px_qos_en, opt5->mc_qos_qid);
 		break;
 	case HW_NAT_MCAST_DEL:
-		foe_mcast_entry_del(opt5->mc_vid, opt5->dst_mac, opt5->mc_px_en, opt5->mc_px_qos_en, opt5->mc_qos_qid);
+		foe_mcast_entry_del(opt5->mc_vid, opt5->dst_mac, opt5->mc_px_en, opt5->mc_px_qos_en);
 		break;
 	case HW_NAT_MCAST_DUMP:
 		foe_mcast_entry_dump();
 		break;
-#endif // CONFIG_PPE_MCAST //
+#endif
 	default:
 		break;
 	}
@@ -187,20 +185,18 @@ HwNatIoctl(struct inode *inode, struct file *filp,
 
 struct file_operations hw_nat_fops = {
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-      unlocked_ioctl:HwNatIoctl,
+	unlocked_ioctl: HwNatIoctl,
 #else
-      ioctl:HwNatIoctl,
+	ioctl: HwNatIoctl,
 #endif
 };
 
 int PpeRegIoctlHandler(void)
 {
-
 	int result = 0;
 	result = register_chrdev(HW_NAT_MAJOR, HW_NAT_DEVNAME, &hw_nat_fops);
 	if (result < 0) {
-		NAT_PRINT(KERN_WARNING "hw_nat: can't get major %d\n",
-			  HW_NAT_MAJOR);
+		printk(KERN_WARNING "hw_nat: can't get major %d\n", HW_NAT_MAJOR);
 		return result;
 	}
 
@@ -211,40 +207,23 @@ int PpeRegIoctlHandler(void)
 	return 0;
 }
 
-
 void PpeUnRegIoctlHandler(void)
 {
 	unregister_chrdev(HW_NAT_MAJOR, HW_NAT_DEVNAME);
 }
 
 #if defined (CONFIG_HNAT_V2)
-int32_t PpeGetAGCnt(struct hwnat_ac_args * opt3)
+int PpeGetAGCnt(struct hwnat_ac_args * opt3)
 {
-#ifdef CONFIG_RA_HW_NAT_ACCNT_MAINTAINER
-	extern struct hwnat_ac_args ac_info[64];
 #if defined (CONFIG_RALINK_MT7620)
-        ac_info[opt3->ag_index].ag_byte_cnt += RegRead(AC_BASE + opt3->ag_index * 8);      /* Low bytes */
-        ac_info[opt3->ag_index].ag_pkt_cnt  += RegRead(AC_BASE + opt3->ag_index * 8 + 4);  /* High bytes */
-#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_ARCH_MT7623)
-        ac_info[opt3->ag_index].ag_byte_cnt += RegRead(AC_BASE + opt3->ag_index * 16);           /* 64bit bytes cnt */
-        ac_info[opt3->ag_index].ag_byte_cnt += ((unsigned long long)(RegRead(AC_BASE + opt3->ag_index * 16 + 4)) << 32);
-        ac_info[opt3->ag_index].ag_pkt_cnt  += RegRead(AC_BASE +  opt3->ag_index * 16 + 8);      /* 32bites packet cnt */
+	opt3->ag_byte_cnt = RegRead(AC_BASE + opt3->ag_index * 8);     /* Low bytes */
+	opt3->ag_pkt_cnt = RegRead(AC_BASE + opt3->ag_index * 8 + 4);  /* High bytes */
+#elif defined (CONFIG_RALINK_MT7621)
+	opt3->ag_byte_cnt = RegRead(AC_BASE + opt3->ag_index * 16);     /* 64bit bytes cnt */
+	opt3->ag_byte_cnt |= ((unsigned long long)(RegRead(AC_BASE + opt3->ag_index * 16 + 4)) << 32);
+	opt3->ag_pkt_cnt = RegRead(AC_BASE + opt3->ag_index * 16 + 8);  /* 32bit packet cnt */
 #endif
-        opt3->ag_byte_cnt = ac_info[opt3->ag_index].ag_byte_cnt;
-        opt3->ag_pkt_cnt = ac_info[opt3->ag_index].ag_pkt_cnt;
-#else
-#if defined (CONFIG_RALINK_MT7620)
-        opt3->ag_byte_cnt = RegRead(AC_BASE + opt3->ag_index * 8);       /* Low bytes */
-        opt3->ag_pkt_cnt = RegRead(AC_BASE + opt3->ag_index * 8 + 4);    /* High bytes */
-#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_ARCH_MT7623)
-        opt3->ag_byte_cnt = RegRead(AC_BASE + opt3->ag_index * 16);     /* 64bit bytes cnt */
-	opt3->ag_byte_cnt += ((unsigned long long)(RegRead(AC_BASE + opt3->ag_index * 16 + 4)) << 32);
-        opt3->ag_pkt_cnt = RegRead(AC_BASE + opt3->ag_index * 16 + 8);  /* 32bites packet cnt */
-#endif
-#endif
-
-
-        return HWNAT_SUCCESS;
+	return HWNAT_SUCCESS;
 }
 #else
 int PpeSetDscpRemarkEbl(uint32_t enable)
@@ -559,8 +538,6 @@ int
 PpeSetRuleSize(uint16_t pre_acl, uint16_t pre_meter, uint16_t pre_ac,
 	       uint16_t post_meter, uint16_t post_ac)
 {
-
-
 	pre_acl_start_addr  = 0;
 	pre_mtr_start_addr  = 0 + pre_acl;
 	pre_ac_start_addr   = 0 + pre_acl + pre_meter;

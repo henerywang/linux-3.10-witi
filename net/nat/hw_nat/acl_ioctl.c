@@ -172,19 +172,18 @@ AclIoctl(struct inode *inode, struct file *filp,
 
 struct file_operations acl_fops = {
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,35)
-      unlocked_ioctl:AclIoctl,
+	unlocked_ioctl: AclIoctl,
 #else
-      ioctl:AclIoctl,
+	ioctl: AclIoctl,
 #endif
 };
 
 int AclRegIoctlHandler(void)
 {
-
 	int result = 0;
 	result = register_chrdev(ACL_MAJOR, ACL_DEVNAME, &acl_fops);
 	if (result < 0) {
-		NAT_PRINT(KERN_WARNING "acl: can't get major %d\n", ACL_MAJOR);
+		printk(KERN_WARNING "acl: can't get major %d\n", ACL_MAJOR);
 		return result;
 	}
 

@@ -18,13 +18,17 @@
 #include <linux/ip.h>
 #include <linux/ipv6.h>
 
+#define HW_NAT_MODULE_VER "v2.52.0"
+
+#if !defined (CONFIG_RT_SECOND_IF_NONE) && !defined (CONFIG_RT_SECOND_IF_RT3352_INIC)
+#define HWNAT_USE_SECOND_IF
+#endif
+
 /*
  * TYPEDEFS AND STRUCTURES
  */
 enum DstPort {
 	DP_RA0 = 11,
-#if defined (CONFIG_RT2860V2_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS) || defined (CONFIG_MBSS_SUPPORT) \
-|| defined (CONFIG_MT76X2_AP_MBSS)
 	DP_RA1 = 12,
 	DP_RA2 = 13,
 	DP_RA3 = 14,
@@ -40,32 +44,14 @@ enum DstPort {
 	DP_RA13 = 24,
 	DP_RA14 = 25,
 	DP_RA15 = 26,
-#endif // CONFIG_RT2860V2_AP_MBSS //
-#if defined (CONFIG_RT2860V2_AP_WDS) || defined (CONFIG_RTPCI_AP_WDS) || defined (CONFIG_WDS_SUPPORT) \
-|| defined (CONFIG_MT76X2_AP_WDS)
-
 	DP_WDS0 = 27,
 	DP_WDS1 = 28,
 	DP_WDS2 = 29,
 	DP_WDS3 = 30,
-#endif // CONFIG_RT2860V2_AP_WDS //
-#if defined (CONFIG_RT2860V2_AP_APCLI) || defined (CONFIG_RTPCI_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT) \
-|| defined (CONFIG_MT76X2_AP_APCLI)
-
 	DP_APCLI0 = 31,
-#endif // CONFIG_RT2860V2_AP_APCLI //
-#if defined (CONFIG_RT2860V2_AP_MESH) || defined (CONFIG_MT76X2_AP_MBSS)\
-|| defined (CONFIG_MT76X2_AP_MESH)
-
 	DP_MESH0 = 32,
-#endif // CONFIG_RT2860V2_AP_MESH //
+#if defined (HWNAT_USE_SECOND_IF)
 	DP_RAI0 = 33,
-#if defined (CONFIG_RT3090_AP_MBSS) || defined (CONFIG_RT5392_AP_MBSS) || \
-    defined (CONFIG_RT3572_AP_MBSS) || defined (CONFIG_RT5572_AP_MBSS) || \
-    defined (CONFIG_RT5592_AP_MBSS) || defined (CONFIG_RT3593_AP_MBSS) || \
-    defined (CONFIG_MT7610_AP_MBSS) || defined (CONFIG_RTPCI_AP_MBSS)  || \
-    defined (CONFIG_MT76X2_AP_MBSS) || \
-    defined (CONFIG_MBSS_SUPPORT)
 	DP_RAI1 = 34,
 	DP_RAI2 = 35,
 	DP_RAI3 = 36,
@@ -81,55 +67,35 @@ enum DstPort {
 	DP_RAI13 = 46,
 	DP_RAI14 = 47,
 	DP_RAI15 = 48,
-#endif // CONFIG_RTDEV_AP_MBSS //
-#if defined (CONFIG_RT3090_AP_WDS) || defined (CONFIG_RT5392_AP_WDS) || \
-    defined (CONFIG_RT3572_AP_WDS) || defined (CONFIG_RT5572_AP_WDS) || \
-    defined (CONFIG_RT5592_AP_WDS) || defined (CONFIG_RT3593_AP_WDS) || \
-    defined (CONFIG_MT76X2_AP_WDS) || \
-    defined (CONFIG_MT7610_AP_WDS) || defined (CONFIG_WDS_SUPPORT)
 	DP_WDSI0 = 49,
 	DP_WDSI1 = 50,
 	DP_WDSI2 = 51,
 	DP_WDSI3 = 52,
-#endif // CONFIG_RTDEV_AP_WDS //
-#if defined (CONFIG_RT3090_AP_APCLI) || defined (CONFIG_RT5392_AP_APCLI) || \
-    defined (CONFIG_RT3572_AP_APCLI) || defined (CONFIG_RT5572_AP_APCLI) || \
-    defined (CONFIG_RT5592_AP_APCLI) || defined (CONFIG_RT3593_AP_APCLI) || \
-    defined (CONFIG_MT76X2_AP_APCLI) ||\
-    defined (CONFIG_MT7610_AP_APCLI) || defined (CONFIG_APCLI_SUPPORT)
 	DP_APCLII0 = 53,
-#endif // CONFIG_RTDEV_AP_APCLI //
-#if defined (CONFIG_RT3090_AP_MESH) || defined (CONFIG_RT5392_AP_MESH) || \
-    defined (CONFIG_RT3572_AP_MESH) || defined (CONFIG_RT5572_AP_MESH) || \
-    defined (CONFIG_MT76X2_AP_MESH) ||\
-    defined (CONFIG_RT5592_AP_MESH) || defined (CONFIG_RT3593_AP_MESH) || \
-    defined (CONFIG_MT7610_AP_MESH)
 	DP_MESHI0 = 54,
-#endif // CONFIG_RTDEV_AP_MESH //
-	MAX_WIFI_IF_NUM = 59,
-	DP_GMAC = 60,
+	MAX_WIFI_IF_NUM = 55,
+#else
+	MAX_WIFI_IF_NUM = 33,
+#endif
+	DP_GMAC1 = 60,
 	DP_GMAC2 = 61,
-	DP_PCI = 62,
-	DP_USB = 63,
-	MAX_IF_NUM
+	DP_NIC0 = 62,
+	DP_NIC1 = 63,
+	MAX_IF_NUM // MAX_IF_NUM = 64 entries (act_dp length 6bits)
 };
 
 typedef struct {
-#if defined (CONFIG_RALINK_MT7620)
 	uint16_t MAGIC_TAG;
 	uint32_t FOE_Entry:14;
+#if defined (CONFIG_RALINK_MT7620)
 	uint32_t CRSN:5;
 	uint32_t SPORT:3;
 	uint32_t ALG:10;
-#elif defined (CONFIG_RALINK_MT7621) || defined (CONFIG_ARCH_MT7623)
-	uint16_t MAGIC_TAG;
-	uint32_t FOE_Entry:14;
+#elif defined (CONFIG_RALINK_MT7621)
 	uint32_t CRSN:5;
 	uint32_t SPORT:4;
 	uint32_t ALG:9;
 #else
-	uint16_t MAGIC_TAG;
-	uint32_t FOE_Entry:14;
 	uint32_t FVLD:1;
 	uint32_t ALG:1;
 	uint32_t AI:8;
@@ -137,44 +103,7 @@ typedef struct {
 	uint32_t AIS:1;
 	uint32_t RESV2:4;
 #endif
-#if defined (CONFIG_RA_HW_NAT_PPTP_L2TP)	
-	uint16_t SOURCE;
-	uint16_t DEST;
-#endif
 }  __attribute__ ((packed)) PdmaRxDescInfo4;
-
-typedef struct {
-	//layer2 header
-	uint8_t dmac[6];
-	uint8_t smac[6];
-
-	//vlan header 
-	uint16_t vlan_tag;
-	uint16_t vlan1_gap;
-	uint16_t vlan1;
-	uint16_t vlan2_gap;
-	uint16_t vlan2;
-	uint16_t vlan_layer;
-
-	//pppoe header
-	uint32_t pppoe_gap;
-	uint16_t ppp_tag;
-	uint16_t pppoe_sid;
-
-	//layer3 header
-	uint16_t eth_type;
-	struct iphdr iph;
-	struct ipv6hdr ip6h;
-
-	//layer4 header
-	struct tcphdr th;
-	struct udphdr uh;
-
-	uint32_t pkt_type;
-	uint8_t is_mcast;
-
-} PktParseResult;
-
 
 /*
  * DEFINITIONS AND MACROS
@@ -184,80 +113,55 @@ typedef struct {
 #endif
 
 /*
- *    2bytes	    4bytes 
+ *    2bytes	    4bytes
  * +-----------+-------------------+
  * | Magic Tag | RX/TX Desc info4  |
  * +-----------+-------------------+
  * |<------FOE Flow Info---------->|
  */
-#if defined (CONFIG_RA_HW_NAT_PPTP_L2TP)	
-#define FOE_INFO_LEN		    10
-#define FOE_MAGIC_FASTPATH	    0x7277
-#define FOE_MAGIC_L2TPPATH	    0x7278
-#else
 #define FOE_INFO_LEN		    6
-#endif
-#define FOE_MAGIC_PCI		    0x7273
-#define FOE_MAGIC_WLAN		    0x7274
+#define FOE_MAGIC_EXTIF		    0x7274
+#define FOE_MAGIC_PCI FOE_MAGIC_EXTIF
+#define FOE_MAGIC_WLAN FOE_MAGIC_EXTIF
 #define FOE_MAGIC_GE		    0x7275
 #define FOE_MAGIC_PPE		    0x7276
+#define FOE_MAGIC_PPE_DWORD	    0x3fff7276UL	/* HNAT_V1: FVLD=0, HNAT_V2: FOE_Entry=0x3fff */
 
 /* choose one of them to keep HNAT related information in somewhere. */
-#if defined (CONFIG_SUPPORT_OPENWRT)
-//#define HNAT_USE_HEADROOM
-//#define HNAT_USE_TAILROOM
-#define HNAT_USE_SKB_CB
-#else
 #define HNAT_USE_HEADROOM
 //#define HNAT_USE_TAILROOM
 //#define HNAT_USE_SKB_CB
-#endif
 
 #if defined (HNAT_USE_HEADROOM)
 #define IS_SPACE_AVAILABLED(skb)    ((skb_headroom(skb) >= FOE_INFO_LEN) ? 1 : 0)
 #define FOE_INFO_START_ADDR(skb)    (skb->head)
 
+#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->MAGIC_TAG
+#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry
+#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->ALG
 #if defined (CONFIG_HNAT_V2)
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->ALG
+#define FOE_ENTRY_VALID(skb)	    (((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry != 0x3fff)
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->CRSN
-#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SPORT	//src_port or user priority
-#if defined (CONFIG_RA_HW_NAT_PPTP_L2TP)	
-#define FOE_SOURCE(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SOURCE	//L4 src_port
-#define FOE_DEST(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->DEST	//L4 dest_port
-#endif
+#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SPORT
 #else
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->ALG
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->head))->FVLD
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SP	//src_port or user priority
-#if defined (CONFIG_RA_HW_NAT_PPTP_L2TP)	
-#define FOE_SOURCE(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->SOURCE	//L4 src_port
-#define FOE_DEST(skb)		    ((PdmaRxDescInfo4 *)((skb)->head))->DEST	//L4 dest_port
-#endif
 #endif
 
 #elif defined (HNAT_USE_TAILROOM)
-
 #define IS_SPACE_AVAILABLED(skb)    ((skb_tailroom(skb) >= FOE_INFO_LEN) ? 1 : 0)
 #define FOE_INFO_START_ADDR(skb)    (skb->end - FOE_INFO_LEN)
 
+#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->MAGIC_TAG
+#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry
+#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->ALG
 #if defined (CONFIG_HNAT_V2)
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->ALG
+#define FOE_ENTRY_VALID(skb)	    (((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry != 0x3fff)
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->CRSN
-#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SPORT //src_port or user priority
-#if defined (CONFIG_RA_HW_NAT_PPTP_L2TP)	
-#define FOE_SOURCE(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SOURCE	//L4 src_port
-#define FOE_DEST(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->DEST	//L4 dest_port
-#endif
+#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SPORT
 #else
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->ALG
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->FVLD
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->end-FOE_INFO_LEN))->SP	//src_port or user priority
 #endif
@@ -266,53 +170,45 @@ typedef struct {
 //change the position of skb_CB if necessary
 #define CB_OFFSET		    32
 #define IS_SPACE_AVAILABLED(skb)    1
-#define FOE_INFO_START_ADDR(skb)    (skb->cb +  CB_OFFSET)
+#define FOE_INFO_START_ADDR(skb)    (skb->cb + CB_OFFSET)
 
+#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
+#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
+#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
 #if defined (CONFIG_HNAT_V2)
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
+#define FOE_ENTRY_VALID(skb)	    (((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry != 0x3fff)
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->CRSN
-#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SPORT	//src_port or user priority
+#define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SPORT
 #else
-#define FOE_MAGIC_TAG(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->MAGIC_TAG
-#define FOE_ENTRY_NUM(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FOE_Entry
-#define FOE_ALG(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->ALG
+#define FOE_ENTRY_VALID(skb)	    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->FVLD
 #define FOE_AI(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->AI
 #define FOE_SP(skb)		    ((PdmaRxDescInfo4 *)((skb)->cb + CB_OFFSET))->SP	//src_port or user priority
 #endif
 
 #endif
 
-#define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_PCI) || \
-				    (FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE)   || \
-				    (FOE_MAGIC_TAG(skb) == FOE_MAGIC_WLAN))
+// fast fill FoE desc field
+#define DO_FILL_FOE_DESC(skb,desc)  (*(uint32_t *)(FOE_INFO_START_ADDR(skb)+2) = (uint32_t)(desc))
 
+// fast fill FoE desc to DPORT PPE (magic_tag,entry_num)
+#define DO_FILL_FOE_DPORT_PPE(skb)  (*(uint32_t *)(FOE_INFO_START_ADDR(skb)) = FOE_MAGIC_PPE_DWORD)
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)
-#define LAYER2_HEADER(skb)		(skb)->mac_header
-#else
-#define LAYER2_HEADER(skb)		(skb)->mac.raw
-#endif
+// fast clear FoE Info (magic_tag,entry_num)
+#define DO_FAST_CLEAR_FOE(skb)	    (*(uint32_t *)(FOE_INFO_START_ADDR(skb)) = 0UL)
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)
-#define LAYER3_HEADER(skb)		(skb)->network_header
-#else
-#define LAYER3_HEADER(skb)		(skb)->nh.raw
-#endif
+// full clear FoE Info
+#define DO_FULL_CLEAR_FOE(skb)	    (memset(FOE_INFO_START_ADDR(skb), 0, FOE_INFO_LEN))
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,21)
-#define LAYER4_HEADER(skb)		(skb)->transport_header
-#else
-#define LAYER4_HEADER(skb)		(skb)->h.raw
-#endif
+#define IS_MAGIC_TAG_VALID(skb)	    ((FOE_MAGIC_TAG(skb) == FOE_MAGIC_GE))
 
+#define IS_DPORT_PPE_VALID(skb)	    (*(uint32_t *)(FOE_INFO_START_ADDR(skb)) == FOE_MAGIC_PPE_DWORD)
+
+#define FOE_ALG_MARK(skb)	    if (IS_SPACE_AVAILABLED(skb) && !FOE_ALG(skb) && IS_MAGIC_TAG_VALID(skb)) FOE_ALG(skb)=1
+#define FOE_AI_UNHIT(skb)	    if (IS_SPACE_AVAILABLED(skb)) FOE_AI(skb)=UN_HIT
 
 /*
  * EXPORT FUNCTION
  */
-int32_t GetPppoeSid(struct sk_buff *skb, uint32_t vlan_gap, uint16_t * sid, uint16_t * ppp_tag);
-
 int PpeSetBindThreshold(uint32_t threshold);
 int PpeSetMaxEntryLimit(uint32_t full, uint32_t half, uint32_t qurt);
 int PpeSetRuleSize(uint16_t pre_acl, uint16_t pre_meter, uint16_t pre_ac,
@@ -322,16 +218,8 @@ int PpeSetKaInterval(uint8_t tcp_ka, uint8_t udp_ka);
 int PpeSetUnbindLifeTime(uint8_t lifetime);
 int PpeSetBindLifetime(uint16_t tcp_fin, uint16_t udp_life, uint16_t fin_life);
 
-void    PpeSetEntryBind(struct sk_buff *skb, struct FoeEntry *foe_entry);
-int32_t PpeFillInL2Info(struct sk_buff * skb, struct FoeEntry * foe_entry);
-int32_t PpeFillInL3Info(struct sk_buff * skb, struct FoeEntry * foe_entry);
-int32_t PpeFillInL4Info(struct sk_buff * skb, struct FoeEntry * foe_entry);
-int32_t PpeSetForcePortInfo(struct sk_buff * skb, struct FoeEntry * foe_entry, int gmac_no);
-struct  net_device *ra_dev_get_by_name(const char *name);
-int32_t is8021Q(uint16_t eth_type);
-int32_t isSpecialTag(uint16_t eth_type);
-int32_t isHwVlanTx(struct sk_buff *skb);
-#if defined (CONFIG_HNAT_V2)
-void PpeSetCacheEbl(void);
-#endif
+struct FoeEntry *get_foe_entry(uint32_t foe_entry_num);
+
+extern struct FoeEntry *get_foe_table(dma_addr_t *dma_handle, uint32_t *FoeTblSize);
+
 #endif

@@ -20,20 +20,16 @@
 #include <linux/netdevice.h>
 
 #include "frame_engine.h"
-#include "foe_fdb.h"
 #include "hwnat_ioctl.h"
 #include "util.h"
-#if defined (CONFIG_HNAT_V2)
 #include "ra_nat.h"
+
+#if defined (CONFIG_RA_HW_NAT_IPV6)
+extern int ipv6_offload;
 #endif
-#if defined (CONFIG_RA_HW_NAT_PPTP_L2TP)
-#include "pptp_l2tp_fdb.h"
-#endif
-extern struct FoeEntry *PpeFoeBase;
-#if defined (CONFIG_RA_HW_NAT_PACKET_SAMPLING)
-extern struct PsEntry *PpePsBase;
-#endif
-extern uint32_t DebugLevel;
+
+extern uint32_t PpeFoeTblSize;
+extern spinlock_t ppe_foe_lock;
 
 #if defined (CONFIG_HNAT_V2)
 /*
@@ -62,7 +58,8 @@ extern uint32_t DebugLevel;
  * |  55:66   | PPPOE ID|
  * +----------+---------+
  */
-void FoeSetMacHiInfo(uint8_t * Dst, uint8_t * Src)
+
+void FoeSetMacHiInfo(uint8_t *Dst, uint8_t *Src)
 {
 	Dst[3] = Src[0];
 	Dst[2] = Src[1];
@@ -70,7 +67,7 @@ void FoeSetMacHiInfo(uint8_t * Dst, uint8_t * Src)
 	Dst[0] = Src[3];
 }
 
-void FoeSetMacLoInfo(uint8_t * Dst, uint8_t * Src)
+void FoeSetMacLoInfo(uint8_t *Dst, uint8_t *Src)
 {
 	Dst[1] = Src[4];
 	Dst[0] = Src[5];
@@ -106,13 +103,14 @@ void FoeSetMacLoInfo(uint8_t * Dst, uint8_t * Src)
  * +--------------+
  *
  */
-void FoeSetMacHiInfo(uint8_t * Dst, uint8_t * Src)
+
+void FoeSetMacHiInfo(uint8_t *Dst, uint8_t *Src)
 {
 	Dst[1] = Src[0];
 	Dst[0] = Src[1];
 }
 
-void FoeSetMacLoInfo(uint8_t * Dst, uint8_t * Src)
+void FoeSetMacLoInfo(uint8_t *Dst, uint8_t *Src)
 {
 	Dst[3] = Src[2];
 	Dst[2] = Src[3];
@@ -151,16 +149,15 @@ int FoeDumpCacheEntry(void)
 	cah_en = RegRead(CAH_CTRL) & 0x1;
 
 	if(!cah_en) {
-		printk("Cache is not enabled\n");
+		NAT_PRINT("Cache is not enabled\n");
 		return 0;
 	}
-
 
 	// cache disable
 	RegModifyBits(CAH_CTRL, 0, 0, 1);
 
-	printk(" No  |   State   |   Tag        \n");
-	printk("-----+-----------+------------  \n");
+	NAT_PRINT(" No  |   State   |   Tag        \n");
+	NAT_PRINT("-----+-----------+------------  \n");
 	for(line = 0; line < MAX_CACHE_LINE_NUM; line++) {
 	
 		//set line number
@@ -178,13 +175,13 @@ int FoeDumpCacheEntry(void)
 		if (is_request_done()) {
 			tag = (RegRead(CAH_RDATA) & 0xFFFF) ;
 			state = ((RegRead(CAH_RDATA)>>16) & 0x3) ;
-			printk("%04d | %s   | %05d\n", line, 
+			NAT_PRINT("%04d | %s   | %05d\n", line, 
 					(state==3) ? " Lock  " : 
 					(state==2) ? " Dirty " :
 					(state==1) ? " Valid " : 
 						     "Invalid", tag);
 		} else {
-			printk("%s is timeout (%d)\n", __FUNCTION__, line);
+			NAT_PRINT("%s is timeout (%d)\n", __FUNCTION__, line);
 		}
 		
 		//software access cache command = read	
@@ -196,11 +193,11 @@ int FoeDumpCacheEntry(void)
 		RegModifyBits(CAH_CTRL, 1, 8, 1);
 
 		if (!is_request_done()) {
-			printk("%s is timeout (%d)\n", __FUNCTION__, line);
+			NAT_PRINT("%s is timeout (%d)\n", __FUNCTION__, line);
 		}
 
 		/* dump first 16B for each foe entry */
-		printk("==========<Flow Table Entry=%d >===============\n", tag);
+		NAT_PRINT("==========<Flow Table Entry=%d >===============\n", tag);
 		for(i = 0; i< 16; i++ ) {
 			RegModifyBits(CAH_LINE_RW, i, 16, 8);
 			
@@ -211,9 +208,9 @@ int FoeDumpCacheEntry(void)
 			RegModifyBits(CAH_CTRL, 1, 8, 1);
 
 			if (is_request_done()) {
-				printk("%02d  %08X\n", i, RegRead(CAH_RDATA));
+				NAT_PRINT("%02d  %08X\n", i, RegRead(CAH_RDATA));
 			} else {
-				printk("%s is timeout (%d)\n", __FUNCTION__, line);
+				NAT_PRINT("%s is timeout (%d)\n", __FUNCTION__, line);
 			}
 			
 			//software access cache command = write	
@@ -225,10 +222,10 @@ int FoeDumpCacheEntry(void)
 			RegModifyBits(CAH_CTRL, 1, 8, 1);
 
 			if (!is_request_done()) {
-				printk("%s is timeout (%d)\n", __FUNCTION__, line);
+				NAT_PRINT("%s is timeout (%d)\n", __FUNCTION__, line);
 			}
 		}
-		printk("=========================================\n");
+		NAT_PRINT("=========================================\n");
 	}
 
 	//clear cache table before enabling cache
@@ -242,38 +239,65 @@ int FoeDumpCacheEntry(void)
 }
 #endif
 
+static void FoePrintInfoBlk1(uint32_t info_blk1)
+{
+	NAT_PRINT("Information Block 1: %08X\n", info_blk1);
+}
+
+static void FoePrintInfoBlk2(uint32_t info_blk2)
+{
+	struct _info_blk2 *iblk2 = (struct _info_blk2 *)&info_blk2;
+
+#if defined (CONFIG_HNAT_V2)
+#if defined (CONFIG_RALINK_MT7621)
+	NAT_PRINT("Information Block 2: %08X (DP=%d, FQOS=%d, QID=%d, MCAST=%d)\n",
+			info_blk2,
+			iblk2->dp,
+			iblk2->fqos,
+			iblk2->qid,
+			iblk2->mcast);
+#else
+	NAT_PRINT("Information Block 2: %08X (FPORT=%d)\n",
+			info_blk2,
+			iblk2->fpidx);
+#endif
+#else
+	NAT_PRINT("Information Block 2: %08X (DP=%d, FORCE=%d)\n",
+			info_blk2,
+			iblk2->dp,
+			iblk2->fd);
+#endif
+}
+
 void FoeDumpEntry(uint32_t Index)
 {
-	struct FoeEntry *entry = &PpeFoeBase[Index];
-#if defined (CONFIG_RA_HW_NAT_PACKET_SAMPLING)
-	struct PsEntry *ps_entry = &PpePsBase[Index];
-#endif	
-	uint32_t *p = (uint32_t *)entry;
-	uint32_t i = 0;
+	struct FoeEntry *entry;
+	uint32_t *p;
+	uint32_t i, max_bytes;
+
+	if (Index >= FOE_4TB_SIZ) {
+		NAT_PRINT("Entry number (%d) is invalid!\n", Index);
+		return;
+	}
+
+	entry = get_foe_entry(Index);
+	p = (uint32_t *)entry;
+
+	max_bytes = 16; // 64 bytes per entry
+#if defined (CONFIG_HNAT_V2) && defined (CONFIG_RA_HW_NAT_IPV6)
+	if (ipv6_offload)
+		max_bytes = 20; // 80 bytes per entry
+#endif
 
 	NAT_PRINT("==========<Flow Table Entry=%d (%p)>===============\n", Index, entry);
-	if (DebugLevel >= 2) {
-#if defined (CONFIG_RA_HW_NAT_IPV6)
-		for(i=0; i < 20; i++) { // 80 bytes per entry
-#else
-		for(i=0; i < 16; i++) { // 64 bytes per entry
-#endif
-			NAT_PRINT("%02d: %08X\n", i,*(p+i));
-		}
+	for(i=0; i < max_bytes; i++) {
+		NAT_PRINT("%02d: %08X\n", i, *(p+i));
 	}
 	NAT_PRINT("-----------------<Flow Info>------------------\n");
-	NAT_PRINT("Information Block 1: %08X\n", entry->ipv4_hnapt.info_blk1);
+	FoePrintInfoBlk1(entry->ipv4_hnapt.info_blk1);
 
 	if (IS_IPV4_HNAPT(entry)) {
-#if defined (CONFIG_RAETH_QDMA)
-                NAT_PRINT("Information Block 2=%x (FP=%d FQOS=%d QID=%d)",
-                                entry->ipv4_hnapt.info_blk2,
-                                entry->ipv4_hnapt.info_blk2 >>5 & 0x7,
-                                entry->ipv4_hnapt.info_blk2 >>4 & 0x1,
-                                entry->ipv4_hnapt.info_blk2 >>0 & 0xF);
-#else
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv4_hnapt.info_blk2);
-#endif
+		FoePrintInfoBlk2(entry->ipv4_hnapt.info_blk2);
 		NAT_PRINT("Create IPv4 HNAPT entry\n");
 		NAT_PRINT
 		    ("IPv4 Org IP/Port: %u.%u.%u.%u:%d->%u.%u.%u.%u:%d\n",
@@ -284,22 +308,23 @@ void FoeDumpEntry(uint32_t Index)
 		     IP_FORMAT(entry->ipv4_hnapt.new_sip), entry->ipv4_hnapt.new_sport,
 		     IP_FORMAT(entry->ipv4_hnapt.new_dip), entry->ipv4_hnapt.new_dport);
 	} else if (IS_IPV4_HNAT(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv4_hnapt.info_blk2);
+		FoePrintInfoBlk2(entry->ipv4_hnapt.info_blk2);
 		NAT_PRINT("Create IPv4 HNAT entry\n");
 		NAT_PRINT("IPv4 Org IP: %u.%u.%u.%u->%u.%u.%u.%u\n",
 			  IP_FORMAT(entry->ipv4_hnapt.sip), IP_FORMAT(entry->ipv4_hnapt.dip));
 		NAT_PRINT("IPv4 New IP: %u.%u.%u.%u->%u.%u.%u.%u\n",
 			  IP_FORMAT(entry->ipv4_hnapt.new_sip), IP_FORMAT(entry->ipv4_hnapt.new_dip));
 #if defined (CONFIG_RA_HW_NAT_IPV6)
+#if !defined (CONFIG_HNAT_V2)
 	} else if (IS_IPV6_1T_ROUTE(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv6_1t_route.info_blk2);
+		FoePrintInfoBlk2(entry->ipv6_1t_route.info_blk2);
 		NAT_PRINT("Create IPv6 Route entry\n");
 		NAT_PRINT("Destination IPv6: %08X:%08X:%08X:%08X",
 			  entry->ipv6_1t_route.ipv6_dip3, entry->ipv6_1t_route.ipv6_dip2,
 			  entry->ipv6_1t_route.ipv6_dip1, entry->ipv6_1t_route.ipv6_dip0);
-#if defined (CONFIG_HNAT_V2)
+#else
 	} else if (IS_IPV4_DSLITE(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv4_dslite.info_blk2);
+		FoePrintInfoBlk2(entry->ipv4_dslite.info_blk2);
 		NAT_PRINT("Create IPv4 Ds-Lite entry\n");
 		NAT_PRINT
 		    ("IPv4 Ds-Lite: %u.%u.%u.%u.%d->%u.%u.%u.%u:%d\n ",
@@ -311,7 +336,7 @@ void FoeDumpEntry(uint32_t Index)
 			  entry->ipv4_dslite.tunnel_dipv6_0, entry->ipv4_dslite.tunnel_dipv6_1,
 			  entry->ipv4_dslite.tunnel_dipv6_2, entry->ipv4_dslite.tunnel_dipv6_3);
 	} else if (IS_IPV6_3T_ROUTE(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv6_3t_route.info_blk2);
+		FoePrintInfoBlk2(entry->ipv6_3t_route.info_blk2);
 		NAT_PRINT("Create IPv6 3-Tuple entry\n");
 		NAT_PRINT
 		    ("ING SIPv6->DIPv6: %08X:%08X:%08X:%08X-> %08X:%08X:%08X:%08X (Prot=%d)\n",
@@ -321,7 +346,7 @@ void FoeDumpEntry(uint32_t Index)
 		     entry->ipv6_3t_route.ipv6_dip2, entry->ipv6_3t_route.ipv6_dip3, 
 		     entry->ipv6_3t_route.prot);
 	} else if (IS_IPV6_5T_ROUTE(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv6_5t_route.info_blk2);
+		FoePrintInfoBlk2(entry->ipv6_5t_route.info_blk2);
 		NAT_PRINT("Create IPv6 5-Tuple entry\n");
 		if(IS_IPV6_FLAB_EBL()) {
 			NAT_PRINT ("ING SIPv6->DIPv6: %08X:%08X:%08X:%08X-> %08X:%08X:%08X:%08X (Flow Label=%08X) \n",
@@ -340,7 +365,7 @@ void FoeDumpEntry(uint32_t Index)
 				entry->ipv6_5t_route.dport);
 		}
 	} else if (IS_IPV6_6RD(entry)) {
-		NAT_PRINT("Information Block 2: %08X\n", entry->ipv6_6rd.info_blk2);
+		FoePrintInfoBlk2(entry->ipv6_6rd.info_blk2);
 		NAT_PRINT("Create IPv6 6RD entry\n");
 		if(IS_IPV6_FLAB_EBL()) {
 			NAT_PRINT ("ING SIPv6->DIPv6: %08X:%08X:%08X:%08X-> %08X:%08X:%08X:%08X (Flow Label=%08X) \n",
@@ -350,7 +375,6 @@ void FoeDumpEntry(uint32_t Index)
 				entry->ipv6_6rd.ipv6_dip2, entry->ipv6_6rd.ipv6_dip3, 
 				((entry->ipv6_5t_route.sport << 16) | (entry->ipv6_5t_route.dport))&0xFFFFF);
 		} else {
-
 			NAT_PRINT ("ING SIPv6->DIPv6: %08X:%08X:%08X:%08X:%d-> %08X:%08X:%08X:%08X:%d \n",
 				entry->ipv6_6rd.ipv6_sip0, entry->ipv6_6rd.ipv6_sip1,
 				entry->ipv6_6rd.ipv6_sip2, entry->ipv6_6rd.ipv6_sip3,
@@ -365,7 +389,6 @@ void FoeDumpEntry(uint32_t Index)
 
 #if defined (CONFIG_HNAT_V2)
 	if (IS_IPV4_HNAPT(entry) || IS_IPV4_HNAT(entry)) {
-
 	    NAT_PRINT
 		("DMAC=%02X:%02X:%02X:%02X:%02X:%02X SMAC=%02X:%02X:%02X:%02X:%02X:%02X\n",
 		 entry->ipv4_hnapt.dmac_hi[3], entry->ipv4_hnapt.dmac_hi[2],
@@ -377,7 +400,7 @@ void FoeDumpEntry(uint32_t Index)
 	    NAT_PRINT("=========================================\n\n");
 	} 
 #if defined (CONFIG_RA_HW_NAT_IPV6)
-	else {
+	else if (ipv6_offload) {
 	    NAT_PRINT
 		("DMAC=%02X:%02X:%02X:%02X:%02X:%02X SMAC=%02X:%02X:%02X:%02X:%02X:%02X\n",
 		 entry->ipv6_5t_route.dmac_hi[3], entry->ipv6_5t_route.dmac_hi[2],
@@ -402,19 +425,7 @@ void FoeDumpEntry(uint32_t Index)
 	     entry->ipv4_hnapt.smac_lo[3], entry->ipv4_hnapt.smac_lo[2],
 	     entry->ipv4_hnapt.smac_lo[1], entry->ipv4_hnapt.smac_lo[0]);
 	    NAT_PRINT("=========================================\n\n");
-	} 
-#endif
-
-#if defined (CONFIG_RA_HW_NAT_PACKET_SAMPLING)
-	p = (uint32_t *)ps_entry;
-
-	NAT_PRINT("==========<PS Table Entry=%d (%p)>===============\n", Index, ps_entry);
-	//if (DebugLevel >= 2) {
-		for(i=0; i < 4; i++) { // 16 bytes per entry
-			printk("%02d: %08X\n", i,*(p+i));
-		}
-	//}
-
+	}
 #endif
 }
 
@@ -424,8 +435,8 @@ int FoeGetAllEntries(struct hwnat_args *opt)
 	int hash_index = 0;
 	int count = 0;		/* valid entry count */
 
-	for (hash_index = 0; hash_index < FOE_4TB_SIZ; hash_index++) {
-		entry = &PpeFoeBase[hash_index];
+	for (hash_index = 0; hash_index < PpeFoeTblSize; hash_index++) {
+		entry = get_foe_entry(hash_index);
 
 		if (entry->bfib1.state == opt->entry_state) {
 			opt->entries[count].hash_index = hash_index;
@@ -449,13 +460,14 @@ int FoeGetAllEntries(struct hwnat_args *opt)
 				opt->entries[count].eg_dp = entry->ipv4_hnapt.new_dport;
 				count++;
 #if defined (CONFIG_RA_HW_NAT_IPV6)
+#if !defined (CONFIG_HNAT_V2)
 			} else if (IS_IPV6_1T_ROUTE(entry)) {
 				opt->entries[count].ing_dipv6_0 = entry->ipv6_1t_route.ipv6_dip3;
 				opt->entries[count].ing_dipv6_1 = entry->ipv6_1t_route.ipv6_dip2;
 				opt->entries[count].ing_dipv6_2 = entry->ipv6_1t_route.ipv6_dip1;
 				opt->entries[count].ing_dipv6_3 = entry->ipv6_1t_route.ipv6_dip0;
 				count++;
-#if defined (CONFIG_HNAT_V2)
+#else
 			} else if (IS_IPV4_DSLITE(entry)) {
 				opt->entries[count].ing_sipv4 = entry->ipv4_dslite.sip;
 				opt->entries[count].ing_dipv4 = entry->ipv4_dslite.dip;
@@ -520,10 +532,6 @@ int FoeGetAllEntries(struct hwnat_args *opt)
 
 	opt->num_of_entries = count;
 
-#if defined (CONFIG_RA_HW_NAT_PPTP_L2TP)
-            //pptp_l2tp_fdb_dump();
-#endif
-
 	if (opt->num_of_entries > 0) {
 		return HWNAT_SUCCESS;
 	} else {
@@ -535,74 +543,82 @@ int FoeBindEntry(struct hwnat_args *opt)
 {
 	struct FoeEntry *entry;
 
-	entry = &PpeFoeBase[opt->entry_num];
+	if (opt->entry_num >= FOE_4TB_SIZ)
+		return HWNAT_ENTRY_NOT_FOUND;
+
+	entry = get_foe_entry(opt->entry_num);
 
 	//restore right information block1
+	spin_lock_bh(&ppe_foe_lock);
 	entry->bfib1.time_stamp = RegRead(FOE_TS) & 0xFFFF;
 	entry->bfib1.state = BIND;
+	spin_unlock_bh(&ppe_foe_lock);
 
 	return HWNAT_SUCCESS;
 }
 
 int FoeUnBindEntry(struct hwnat_args *opt)
 {
-
 	struct FoeEntry *entry;
 
-	entry = &PpeFoeBase[opt->entry_num];
+	if (opt->entry_num >= FOE_4TB_SIZ)
+		return HWNAT_ENTRY_NOT_FOUND;
 
-	entry->ipv4_hnapt.udib1.state = UNBIND;
-	entry->ipv4_hnapt.udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
+	entry = get_foe_entry(opt->entry_num);
+
+	spin_lock_bh(&ppe_foe_lock);
+	entry->udib1.state = UNBIND;
+	entry->udib1.time_stamp = RegRead(FOE_TS) & 0xFF;
 
 #if defined (CONFIG_HNAT_V2)
-	PpeSetCacheEbl(); /*clear HWNAT cache*/
+	/* clear HWNAT cache */
+	RegModifyBits(CAH_CTRL, 1, 9, 1);
+	RegModifyBits(CAH_CTRL, 0, 9, 1);
 #endif
+	spin_unlock_bh(&ppe_foe_lock);
+
 	return HWNAT_SUCCESS;
 }
 
 #if defined (CONFIG_HNAT_V2)
-int _FoeDropEntry(unsigned int entry_num)
+int FoeDropEntry(struct hwnat_args *opt)
 {
 #if defined (CONFIG_RALINK_MT7621)
 	struct FoeEntry *entry;
-	
-	entry = &PpeFoeBase[entry_num];
-	
+
+	if (opt->entry_num >= FOE_4TB_SIZ)
+		return HWNAT_ENTRY_NOT_FOUND;
+
+	entry = get_foe_entry(opt->entry_num);
+
+	spin_lock_bh(&ppe_foe_lock);
 	entry->ipv4_hnapt.iblk2.dp = 7;
 
-	PpeSetCacheEbl(); /*clear HWNAT cache*/
+	/* clear HWNAT cache */
+	RegModifyBits(CAH_CTRL, 1, 9, 1);
+	RegModifyBits(CAH_CTRL, 0, 9, 1);
+	spin_unlock_bh(&ppe_foe_lock);
 
 	return HWNAT_SUCCESS;
 #else
 	return HWNAT_FAIL;
 #endif
 }
-
-EXPORT_SYMBOL(_FoeDropEntry);
-
-
-int FoeDropEntry(struct hwnat_args *opt)
-{
-	return _FoeDropEntry(opt->entry_num);
-}
 #endif
 
-int FoeDelEntryByNum(uint32_t entry_num)
+int FoeDelEntry(struct hwnat_args *opt)
 {
 	struct FoeEntry *entry;
 
-	entry = &PpeFoeBase[entry_num];
+	if (opt->entry_num >= FOE_4TB_SIZ)
+		return HWNAT_ENTRY_NOT_FOUND;
+
+	entry = get_foe_entry(opt->entry_num);
+
+	spin_lock_bh(&ppe_foe_lock);
 	memset(entry, 0, sizeof(struct FoeEntry));
+	spin_unlock_bh(&ppe_foe_lock);
 
 	return HWNAT_SUCCESS;
 }
 
-
-void FoeTblClean(void)
-{
-	uint32_t FoeTblSize;
-
-	FoeTblSize = FOE_4TB_SIZ * sizeof(struct FoeEntry);
-	memset(PpeFoeBase, 0, FoeTblSize);
-
-}

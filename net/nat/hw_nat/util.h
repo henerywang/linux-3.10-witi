@@ -22,11 +22,6 @@
 /*
  * DEFINITIONS AND MACROS
  */
-#if defined (CONFIG_ARCH_MT7623)
-#include <mach/sync_write.h>
-#define RegRead(phys)		 (*(volatile unsigned int*)(phys))
-#define RegWrite(phys, val)	 mt65xx_reg_sync_writel(val, phys)
-#else
 #define PHYS_TO_K1(physaddr) KSEG1ADDR(physaddr)
 #define RegRead(phys) (*(volatile uint32_t *)PHYS_TO_K1(phys))
 #if 0
@@ -37,7 +32,6 @@
         }while(0)
 #else
 #define RegWrite(phys, val)  ((*(volatile uint32_t *)PHYS_TO_K1(phys)) = (val))
-#endif
 #endif
 
 /*

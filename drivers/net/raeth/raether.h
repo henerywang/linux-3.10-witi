@@ -1,146 +1,126 @@
-#ifndef RA2882ETHEND_H
-#define RA2882ETHEND_H
+#ifndef __RAETHER_H__
+#define __RAETHER_H__
 
-#ifdef DSP_VIA_NONCACHEABLE
-#define ESRAM_BASE	0xa0800000	/* 0x0080-0000  ~ 0x00807FFF */
-#else
-#define ESRAM_BASE	0x80800000	/* 0x0080-0000  ~ 0x00807FFF */
-#endif
+#include <linux/mii.h>
+#include <linux/if_vlan.h>
+#include <linux/skbuff.h>
 
-#define RX_RING_BASE	((int)(ESRAM_BASE + 0x7000))
-#define TX_RING_BASE	((int)(ESRAM_BASE + 0x7800))
+#include <asm/rt2880/rt_mmap.h>
+#include <asm/rt2880/surfboard.h>
+#include <asm/rt2880/surfboardint.h>
 
-#define NUM_TX_RINGS 	4
-#ifdef MEMORY_OPTIMIZATION
-#ifdef CONFIG_RAETH_ROUTER
-#define NUM_RX_DESC     32 //128
-#define NUM_TX_DESC    	32 //128
-#elif CONFIG_RT_3052_ESW
-#define NUM_RX_DESC     16 //64
-#define NUM_TX_DESC     16 //64
-#else
-#define NUM_RX_DESC     32 //128
-#define NUM_TX_DESC     32 //128
-#endif
-//#define NUM_RX_MAX_PROCESS 32
-#define NUM_RX_MAX_PROCESS 32
-#else
-#if defined (CONFIG_RAETH_ROUTER)
-#define NUM_RX_DESC     256
-#define NUM_TX_DESC    	256
-#elif defined (CONFIG_RT_3052_ESW)
-#if defined (CONFIG_RALINK_MT7621)
-#define NUM_RX_DESC 1024
-#define NUM_QRX_DESC     16
-#ifdef CONFIG_RAETH_QDMA
-#define NUM_PQ 16
-#define NUM_PQ_RESV 4
-#define FFA 1024
-#define QUEUE_OFFSET 0x10
-#define NUM_TX_DESC (NUM_PQ * NUM_PQ_RESV + FFA)
-#else
-#define NUM_TX_DESC 1024
-#endif
-#elif defined (CONFIG_ARCH_MT7623)
-#define NUM_RX_DESC     2048
-#ifdef CONFIG_RAETH_QDMA
-#if defined (CONFIG_RAETH_QDMATX_QDMARX) || defined (CONFIG_RAETH_PDMATX_QDMARX)
-#define NUM_QRX_DESC NUM_RX_DESC
-#else
-#define NUM_QRX_DESC     16
-#endif
-#define NUM_PQ 16
-#define NUM_PQ_RESV 4
-#define FFA 2048
-#define QUEUE_OFFSET 0x10
-#define NUM_TX_DESC (NUM_PQ * NUM_PQ_RESV + FFA)
-#else
-#define NUM_TX_DESC     2048
-#endif
-#else
-#define NUM_RX_DESC     512
-#define NUM_QRX_DESC NUM_RX_DESC
-#define NUM_TX_DESC     512
-#endif
-#else
-#define NUM_RX_DESC     256
-#define NUM_QRX_DESC NUM_RX_DESC
-#define NUM_TX_DESC     256
-#endif
-#if defined(CONFIG_RALINK_RT3883) || defined(CONFIG_RALINK_MT7620) 
-#define NUM_RX_MAX_PROCESS 2
-#else
-#define NUM_RX_MAX_PROCESS 16
-#endif
-#endif
-#define NUM_LRO_RX_DESC	16
+#include "ra_compat.h"
+#include "ra_eth_reg.h"
 
-#if defined (CONFIG_SUPPORT_OPENWRT)
-#define DEV_NAME        "eth0"
-#define DEV2_NAME       "eth1"
+///////////////////////////////////////////////////////////////
+
+#define RAETH_VERSION		"v3.2.4"
+#define RAETH_DEV_NAME		"raeth"
+
+#define DEV_NAME		"eth0"
+#define DEV2_NAME		"eth1"
+
+///////////////////////////////////////////////////////////////
+
+typedef struct _END_DEVICE
+{
+#if defined (CONFIG_PSEUDO_SUPPORT)
+	struct net_device		*PseudoDev;
+#endif
+#if defined (CONFIG_RAETH_NAPI)
+	struct napi_struct		napi;
 #else
-#define DEV_NAME        "eth2"
-#define DEV2_NAME       "eth3"
+	struct tasklet_struct		rx_tasklet;
+	struct tasklet_struct		tx_tasklet;
 #endif
 
-#if defined (CONFIG_RALINK_RT6855A) || defined (CONFIG_RALINK_MT7621) || defined (CONFIG_ARCH_MT7623)
-#define GMAC0_OFFSET    0xE000
-#define GMAC2_OFFSET    0xE006
+	/* RX path */
+	unsigned int			active;
+	struct PDMA_rxdesc		*rxd_ring;
+	struct sk_buff			*rxd_buff[NUM_RX_DESC];
+
+	/* TX path */
+	spinlock_t			page_lock;
+#if !defined (RAETH_HW_PADPKT)
+	unsigned int			min_pkt_len;
+#endif
+#if defined (CONFIG_RAETH_QDMA)
+	struct QDMA_txdesc		*txd_pool;
+	dma_addr_t			 txd_pool_phy;
+	unsigned int			 txd_last_idx;
+	unsigned int			 txd_pool_free_num;
+	unsigned int			 txd_pool_free_head;
+	unsigned int			 txd_pool_free_tail;
+	unsigned int			 txd_pool_info[NUM_TX_DESC];
 #else
-#define GMAC0_OFFSET    0x28 
-#define GMAC2_OFFSET    0x22
+	struct PDMA_txdesc		*txd_ring;
+	unsigned int			 txd_last_idx;
+	unsigned int			 txd_free_idx;
+#endif
+	struct sk_buff			*txd_buff[NUM_TX_DESC];
+
+	/* VLAN TX maps */
+#if defined (CONFIG_RAETH_HW_VLAN_TX) && !defined (RAETH_HW_VLAN4K)
+	unsigned char			vlan_4k_map[VLAN_N_VID];
+	unsigned short			vlan_id_map[16];
 #endif
 
-#if   defined(CONFIG_ARCH_MT7623)
-#define IRQ_ENET0	232
-#define IRQ_ENET1       231
-#define IRQ_ENET2       230
+	/* QDMA HW staff & phys addr (unused in processing) */
+#if defined (CONFIG_RAETH_QDMA)
+	struct QDMA_txdesc		*fq_head;
+	dma_addr_t			 fq_head_phy;
+	unsigned char			*fq_head_page;
+	dma_addr_t			 fq_head_page_phy;
+#if !defined (CONFIG_RAETH_QDMATX_QDMARX)
+	struct PDMA_rxdesc		*qrx_ring;
+	dma_addr_t			 qrx_ring_phy;
+	struct sk_buff			*qrx_buff;
+#endif
 #else
-#define IRQ_ENET0	3 	/* hardware interrupt #3, defined in RT2880 Soc Design Spec Rev 0.03, pp43 */
+	dma_addr_t			txd_ring_phy;
+#endif
+	dma_addr_t			rxd_ring_phy;
+
+	/* stats */
+	spinlock_t			stat_lock;
+	struct work_struct		stat_wq;
+	struct timer_list		stat_timer;
+	struct rtnl_link_stats64	stat;
+
+	/* ethtool */
+#if defined (CONFIG_ETHTOOL)
+	struct mii_if_info		mii_info;
+#endif
+} END_DEVICE, *PEND_DEVICE;
+
+#if defined (CONFIG_PSEUDO_SUPPORT)
+typedef struct _PSEUDO_ADAPTER
+{
+	struct net_device		*RaethDev;
+	struct rtnl_link_stats64	stat;
+#if defined (CONFIG_ETHTOOL)
+	struct mii_if_info		mii_info;
+#endif
+} PSEUDO_ADAPTER, *PPSEUDO_ADAPTER;
 #endif
 
-#if defined (CONFIG_RAETH_HW_LRO)
-#define	HW_LRO_TIMER_UNIT   1
-#define	HW_LRO_REFRESH_TIME 50000
-#define	HW_LRO_MAX_AGG_CNT	64
-#define	HW_LRO_AGG_DELTA	1
-#if defined(CONFIG_RAETH_PDMA_DVT)
-#define	MAX_LRO_RX_LENGTH	10240
-#else
-#define	MAX_LRO_RX_LENGTH	(PAGE_SIZE * 3)
-#endif
-#define	HW_LRO_AGG_TIME		10	/* 200us */
-#define	HW_LRO_AGE_TIME		50
-#define	HW_LRO_BW_THRE	        3000
-#define	HW_LRO_PKT_INT_ALPHA    100
-#endif  /* CONFIG_RAETH_HW_LRO */
-#define FE_INT_STATUS_REG (*(volatile unsigned long *)(FE_INT_STATUS))
-#define FE_INT_STATUS_CLEAN(reg) (*(volatile unsigned long *)(FE_INT_STATUS)) = reg
+///////////////////////////////////////////////////////////////
 
-//#define RAETH_DEBUG
-#ifdef RAETH_DEBUG
+int  raeth_ioctl(struct ifreq *ifr, int cmd);
+#if defined (CONFIG_RAETH_ESW_CONTROL)
+int  esw_ioctl_init_post(void);
+int  esw_ioctl_init(void);
+void esw_ioctl_uninit(void);
+#elif defined (CONFIG_RAETH_DHCP_TOUCH)
+void esw_dhcpc_init(void);
+#endif
+
+///////////////////////////////////////////////////////////////
+
+#if defined (CONFIG_RAETH_DEBUG)
 #define RAETH_PRINT(fmt, args...) printk(KERN_INFO fmt, ## args)
 #else
-#define RAETH_PRINT(fmt, args...) { }
+#define RAETH_PRINT(fmt, args...)
 #endif
-
-struct net_device_stats *ra_get_stats(struct net_device *dev);
-
-void ei_tx_timeout(struct net_device *dev);
-int rather_probe(struct net_device *dev);
-int ei_open(struct net_device *dev);
-int ei_close(struct net_device *dev);
-
-int ra2882eth_init(void);
-void ra2882eth_cleanup_module(void);
-
-void ei_xmit_housekeeping(unsigned long data);
-
-u32 mii_mgr_read(u32 phy_addr, u32 phy_register, u32 *read_data);
-u32 mii_mgr_write(u32 phy_addr, u32 phy_register, u32 write_data);
-u32 mii_mgr_cl45_set_address(u32 port_num, u32 dev_addr, u32 reg_addr);
-u32 mii_mgr_read_cl45(u32 port_num, u32 dev_addr, u32 reg_addr, u32 *read_data);
-u32 mii_mgr_write_cl45(u32 port_num, u32 dev_addr, u32 reg_addr, u32 write_data);
-void fe_sw_init(void);
 
 #endif

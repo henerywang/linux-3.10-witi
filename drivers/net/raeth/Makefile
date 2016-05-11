@@ -1,54 +1,77 @@
 obj-$(CONFIG_RAETH) += raeth.o
-raeth-objs := ra_mac.o mii_mgr.o ra_rfrw.o
 
-#EXTRA_CFLAGS   += -DCONFIG_RAETH_MULTIPLE_RX_RING
+raeth-objs := raether.o mii_mgr.o ra_ioctl.o ra_mac.o ra_phy.o ra_eth.o
 
-ifeq ($(CONFIG_RAETH_QOS),y)
-raeth-objs += ra_qos.o
+ifeq ($(CONFIG_RALINK_RT3052),y)
+raeth-objs += ra_rfrw.o
+raeth-objs += ra_esw_rt305x.o
+ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
+raeth-objs += mtk_esw/ioctl_rt305x.o
+endif
 endif
 
-ifeq ($(CONFIG_RAETH_QDMA),y)
-raeth-objs += raether_qdma.o
+ifeq ($(CONFIG_RALINK_RT3352),y)
+raeth-objs += ra_esw_rt305x.o
+ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
+raeth-objs += mtk_esw/ioctl_rt305x.o
+endif
 endif
 
-ifneq ($(CONFIG_RAETH_QDMA),y)
-raeth-objs += raether_pdma.o
+ifeq ($(CONFIG_RALINK_RT5350),y)
+raeth-objs += ra_esw_rt305x.o
+ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
+raeth-objs += mtk_esw/ioctl_rt305x.o
+endif
 endif
 
-raeth-objs += raether.o
+ifeq ($(CONFIG_RALINK_MT7620),y)
+raeth-objs += ra_esw_mt7620.o
+ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
+raeth-objs += mtk_esw/ioctl_mt762x.o
+endif
+endif
+
+ifeq ($(CONFIG_RALINK_MT7621),y)
+raeth-objs += ra_eth_mt7621.o
+ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
+raeth-objs += mtk_esw/ioctl_mt762x.o
+endif
+endif
+
+ifeq ($(CONFIG_RALINK_MT7628),y)
+raeth-objs += ra_esw_rt305x.o
+ifeq ($(CONFIG_RAETH_ESW_CONTROL),y)
+raeth-objs += mtk_esw/ioctl_rt305x.o
+endif
+endif
+
+ifeq ($(CONFIG_RAETH_ESW_IGMP_SNOOP_SW),y)
+raeth-objs += mtk_esw/ioctl_igmp.o
+endif
+
+ifeq ($(CONFIG_RAETH_ESW),y)
+raeth-objs += ra_esw_base.o
+endif
+
+ifeq ($(CONFIG_MT7530_GSW),y)
+raeth-objs += ra_esw_base.o
+raeth-objs += ra_gsw_mt7530.o
+endif
+
+ifeq ($(CONFIG_RAETH_DHCP_TOUCH),y)
+ifneq ($(CONFIG_RAETH_ESW_CONTROL),y)
+raeth-objs += ra_esw_dhcpc.o
+endif
+endif
 
 ifeq ($(CONFIG_ETHTOOL),y)
 raeth-objs += ra_ethtool.o
 endif
 
-ifeq ($(CONFIG_RALINK_RT3052_MP2),y)
-raeth-objs += mcast.o
-endif
-
-ifeq ($(CONFIG_RAETH_NETLINK),y)
-raeth-objs += ra_netlink.o
-endif
-
-ifeq ($(CONFIG_RAETH_HW_LRO),y)
-raeth-objs += raether_hwlro.o
-endif
-
-ifeq ($(CONFIG_RAETH_GMAC2),y)
+ifeq ($(CONFIG_RAETH_BOTH_GMAC),y)
 EXTRA_CFLAGS += -DCONFIG_PSEUDO_SUPPORT
 endif
 
-ifeq ($(CONFIG_ETH_MEMORY_OPTIMIZATION),y)
-EXTRA_CFLAGS   += -DMEMORY_OPTIMIZATION
-endif
-
-ifeq ($(CONFIG_RT2860V2_AP_MEMORY_OPTIMIZATION),y)
-EXTRA_CFLAGS   += -DMEMORY_OPTIMIZATION
-endif
-
-ifeq ($(CONFIG_RA_NETWORK_WORKQUEUE_BH),y)
-EXTRA_CFLAGS   += -DWORKQUEUE_BH
-endif
-
-ifeq ($(CONFIG_TASKLET_WORKQUEUE_SW),y)
-EXTRA_CFLAGS   += -DTASKLET_WORKQUEUE_SW
+ifeq ($(CONFIG_RAETH_MEMORY_OPTIMIZATION),y)
+EXTRA_CFLAGS += -DMEMORY_OPTIMIZATION
 endif

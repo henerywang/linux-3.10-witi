@@ -11,10 +11,10 @@
     Steven Liu  2006-10-06      Initial version
 */
 
-#ifndef	__HW_NAT_IOCTL_H__
-#define	__HW_NAT_IOCTL_H__
+#ifndef __HW_NAT_IOCTL_H__
+#define __HW_NAT_IOCTL_H__
 
-#define HW_NAT_DUMP_CACHE_ENTRY    	(0x24)
+#define HW_NAT_DUMP_CACHE_ENTRY    	(0x02)
 #define HW_NAT_DUMP_ENTRY    		(0x03)
 #define HW_NAT_GET_ALL_ENTRIES 		(0x04)
 #define HW_NAT_BIND_ENTRY		(0x05)
@@ -22,12 +22,13 @@
 #define HW_NAT_INVALID_ENTRY		(0x07)
 #define HW_NAT_DEBUG	   		(0x08)
 
-
-#define HW_NAT_DROP_ENTRY		(0x36)
-
 /*HNAT QOS*/
 #if defined (CONFIG_HNAT_V2)
 #define HW_NAT_GET_AC_CNT		(0x09)
+#define HW_NAT_MCAST_INS		(0x20)
+#define HW_NAT_MCAST_DEL		(0x21)
+#define HW_NAT_MCAST_DUMP		(0x22)
+#define HW_NAT_DROP_ENTRY		(0x36)
 #else
 #define HW_NAT_DSCP_REMARK		(0x09)
 #define HW_NAT_VPRI_REMARK		(0x0a)
@@ -51,12 +52,6 @@
 #define HW_NAT_BIND_LIFETIME		(0x1B)
 #define HW_NAT_BIND_DIRECTION		(0x1C)
 #define HW_NAT_VLAN_ID			(0x1D)
-
-#if defined (CONFIG_PPE_MCAST)
-#define HW_NAT_MCAST_INS		(0x20)
-#define HW_NAT_MCAST_DEL		(0x21)
-#define HW_NAT_MCAST_DUMP		(0x22)
-#endif
 
 #define HW_NAT_DEVNAME			"hwnat0"
 #define HW_NAT_MAJOR			(220)
@@ -129,6 +124,7 @@ struct hwnat_args {
 	struct hwnat_tuple entries[0];
 };
 
+#if !defined (CONFIG_HNAT_V2)
 /*hnat qos*/
 struct hwnat_qos_args {
 	unsigned int enable:1;
@@ -145,6 +141,7 @@ struct hwnat_qos_args {
 	unsigned int weight3:4;
 	enum hwnat_status result;
 };
+#endif
 
 /*hnat config*/
 struct hwnat_config_args {
@@ -171,30 +168,27 @@ struct hwnat_config_args {
 
 #if defined (CONFIG_HNAT_V2)
 struct hwnat_ac_args {
-	unsigned char ag_index;
+	unsigned int ag_index;
+	unsigned int ag_pkt_cnt;
 	unsigned long long ag_byte_cnt;
-	unsigned long long ag_pkt_cnt;
 	enum hwnat_status result;
 };
-#endif
 
-#if defined (CONFIG_PPE_MCAST)
 struct hwnat_mcast_args {
-	unsigned int    mc_vid:16;
-	unsigned int    mc_px_en:4;
-	unsigned int    valid:1;
-	unsigned int    rev2:3;
-	unsigned int    mc_px_qos_en:4;
-	unsigned int    mc_qos_qid:4;
-	unsigned char	dst_mac[6];
+	unsigned int mc_vid:16;
+	unsigned int mc_px_en:4;
+	unsigned int valid:1;
+	unsigned int rev2:3;
+	unsigned int mc_px_qos_en:4;
+	unsigned int mc_qos_qid:4;
+	unsigned char dst_mac[6];
 };
 #endif
-
 
 int PpeRegIoctlHandler(void);
 void PpeUnRegIoctlHandler(void);
 #if defined (CONFIG_HNAT_V2)
-int32_t PpeGetAGCnt(struct hwnat_ac_args *opt3);
+int PpeGetAGCnt(struct hwnat_ac_args *opt3);
 #else
 int PpeSetDscpRemarkEbl(unsigned int enable);
 int PpeSetVpriRemarkEbl(unsigned int enable);
@@ -214,7 +208,6 @@ void PpeRstPreAcPtr(void);
 void PpeRstPostAcPtr(void);
 void PpeRstPreMtrPtr(void);
 void PpeRstPostMtrPtr(void);
-
 #endif
 
 #endif

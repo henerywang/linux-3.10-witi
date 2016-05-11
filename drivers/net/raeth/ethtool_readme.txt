@@ -9,8 +9,8 @@ You can change current PHY address to X(0~4) by doing follow command:
 
 Ethtool command also would show the current PHY address as following.
 
-# ethtool  eth2
-Settings for eth2:
+# ethtool  eth0
+Settings for eth0:
         Supported ports: [ TP MII ]
         Supported link modes:   10baseT/Half 10baseT/Full
                                 100baseT/Half 100baseT/Full
@@ -35,10 +35,10 @@ The "PHYAD" field shows the current PHY address.
 Usage example
 1) show port1 info
 # echo 1 > /proc/rt2880/gmac		# change phy address to 1
-# ethtool eth2
+# ethtool eth0
 
 2) show port0 info
 # echo 0 > /proc/rt2880/gmac		# change phy address to 0
-# ethtool eth2
+# ethtool eth0
 
 

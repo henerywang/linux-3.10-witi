@@ -36,6 +36,7 @@ void MacReverse(uint8_t * Mac)
 	}
 }
 
+#if defined (CONFIG_RA_HW_NAT_DEBUG)
 int GetNext(char *src, int separator, char *dest)
 {
 	char *c;
@@ -97,6 +98,7 @@ unsigned int Str2Ip(IN char *str)
 	c[3] = atoi(ptr);
 	return ((c[0] << 24) + (c[1] << 16) + (c[2] << 8) + c[3]);
 }
+#endif
 
 /* calculate ip address range */
 /* start_ip <= x < end_ip */
@@ -133,7 +135,7 @@ void RegModifyBits(uint32_t Addr, uint32_t Data, uint32_t Offset, uint32_t Len)
 
 	Value = RegRead(Addr);
 	Value &= ~Mask;
-	Value |= (Data << Offset) & Mask;;
+	Value |= (Data << Offset) & Mask;
 
 	RegWrite(Addr, Value);
 }

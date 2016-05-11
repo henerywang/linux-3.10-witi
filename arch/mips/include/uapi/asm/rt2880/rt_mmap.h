@@ -32,6 +32,11 @@
 #ifndef __RALINK_MMAP__
 #define __RALINK_MMAP__
 
+#define PHYS_TO_K1(physaddr)		KSEG1ADDR(physaddr)
+#define sysRegRead(phys)		(*(volatile unsigned int *)PHYS_TO_K1(phys))
+#define sysRegWrite(phys, val)		((*(volatile unsigned int *)PHYS_TO_K1(phys)) = (val))
+
+
 #if defined (CONFIG_RALINK_RT2880_SHUTTLE)
 
 #define RALINK_SYSCTL_BASE 		0xA0300000
@@ -192,6 +197,7 @@
 #define RALINK_11N_MAC_BASE		0xB0180000
 #define RALINK_USB_HOST_BASE		0x101C0000
 
+#define RALINK_CPU_CLK_AUTO_CFG		0xB0000044
 #define RALINK_MCNT_CFG			0xB0000D00
 #define RALINK_COMPARE			0xB0000D04
 #define RALINK_COUNT			0xB0000D08
@@ -259,6 +265,7 @@
 #define RALINK_11N_MAC_BASE		0xB0180000
 #define RALINK_USB_HOST_BASE		0x101C0000
 
+#define RALINK_CPU_CLK_AUTO_CFG		0xB0000044
 #define RALINK_MCNT_CFG			0xB0000D00
 #define RALINK_COMPARE			0xB0000D04
 #define RALINK_COUNT			0xB0000D08
@@ -427,6 +434,8 @@
 //Clock Conf Register
 #define RALINK_UPHY1_CLK_EN		(1<<20)
 #define RALINK_UPHY0_CLK_EN		(1<<18)
+#define RALINK_PCI_CLK_EN		(1<<19)
+#define RALINK_PCIE_CLK_EN		(1<<21)
 #define RALINK_GE1_CLK_EN		(1<<16)
 
 #elif defined (CONFIG_RALINK_RT6855)
@@ -525,6 +534,7 @@
 #define RALINK_11N_MAC_BASE		0xB0180000
 #define RALINK_USB_HOST_BASE		0x101C0000
 
+#define RALINK_CPU_CLK_AUTO_CFG		0xB0000040
 #define RALINK_MCNT_CFG			0xB0000D00
 #define RALINK_COMPARE			0xB0000D04
 #define RALINK_COUNT			0xB0000D08
@@ -543,6 +553,7 @@
 #define RALINK_INTCTL_SPI		(1<<11)
 #define RALINK_INTCTL_UARTLITE		(1<<12)
 #define RALINK_INTCTL_CRYPTO		(1<<13)
+#define RALINK_INTCTL_SDXC		(1<<14)
 #define RALINK_INTCTL_ESW		(1<<17)
 #define RALINK_INTCTL_UHST		(1<<18)
 #define RALINK_INTCTL_UDEV		(1<<19)
@@ -557,6 +568,7 @@
 #define RALINK_UART_RST			(1<<12)
 #define RALINK_PIO_RST			(1<<13)
 #define RALINK_DMA_RST			(1<<14)
+#define RALINK_NAND_RST			(1<<15)
 #define RALINK_I2C_RST			(1<<16)
 #define RALINK_I2S_RST			(1<<17)
 #define RALINK_SPI_RST			(1<<18)
@@ -570,12 +582,19 @@
 #define RALINK_PCIE1_RST		(1<<27)
 #define RALINK_MIPS_CNT_RST		(1<<28)
 #define RALINK_CRYPTO_RST		(1<<29)
+#define RALINK_SDXC_RST			(1<<30)
+#define RALINK_PPE_RST			(1<<31)
+
 
 //Clock Conf Register
+#define RALINK_PCM_CLK_EN		(1<<11)
+#define RALINK_NAND_CLK_EN		(1<<15)
+#define RALINK_I2S_CLK_EN		(1<<17)
 #define RALINK_UPHY0_CLK_EN		(1<<25)
 #define RALINK_UPHY1_CLK_EN		(1<<22)
 #define RALINK_PCIE0_CLK_EN		(1<<26)
 #define RALINK_PCIE1_CLK_EN		(1<<27)
+#define RALINK_SDXC_CLK_EN		(1<<30)
 
 //CPU PLL CFG Register
 #define CPLL_SW_CONFIG                  (0x1UL << 31)
@@ -686,8 +705,8 @@
 #define RALINK_PCIE0_CLK_EN		(1<<24)
 #define RALINK_PCIE1_CLK_EN		(1<<25)
 #define RALINK_PCIE2_CLK_EN		(1<<26)
-//#define RALINK_UPHY0_CLK_EN		(1<<27)
-//#define RALINK_UPHY1_CLK_EN		(1<<28)
+#define RALINK_CRYPTO_CLK_EN		(1<<29)
+#define RALINK_SDXC_CLK_EN		(1<<30)
 
 //CPU PLL CFG Register
 #define CPLL_SW_CONFIG                  (0x1UL << 31)
@@ -695,7 +714,7 @@
 #define CPLL_MULT_RATIO                 (0x7UL << CPLL_MULT_RATIO_SHIFT)
 #define CPLL_DIV_RATIO_SHIFT            10
 #define CPLL_DIV_RATIO                  (0x3UL << CPLL_DIV_RATIO_SHIFT)
-#define BASE_CLOCK                      40      /* Mhz */
+#define BASE_CLOCK			50      /* Mhz */
 
 #define RALINK_TESTSTAT			0xBE000018
 #define RALINK_TESTSTAT2		0xBE00001C
@@ -730,6 +749,7 @@
 #define RALINK_11N_MAC_BASE		0xB0180000
 #define RALINK_USB_HOST_BASE		0x101C0000
 
+#define RALINK_CPU_CLK_AUTO_CFG		0xB0000444
 #define RALINK_MCNT_CFG			0xB0000500
 #define RALINK_COMPARE			0xB0000504
 #define RALINK_COUNT			0xB0000508
@@ -749,6 +769,7 @@
 #define RALINK_INTCTL_SPI               (1<<11)
 #define RALINK_INTCTL_UARTLITE          (1<<12)
 #define RALINK_INTCTL_CRYPTO            (1<<13)
+#define RALINK_INTCTL_SDXC		(1<<14)
 #define RALINK_INTCTL_ESW               (1<<17)
 #define RALINK_INTCTL_UHST              (1<<18)
 #define RALINK_INTCTL_UDEV              (1<<19)
@@ -776,12 +797,17 @@
 #define RALINK_PCIE1_RST                (1<<27)
 #define RALINK_MIPS_CNT_RST             (1<<28)
 #define RALINK_CRYPTO_RST               (1<<29)
+#define RALINK_SDXC_RST			(1<<30)
 
 //Clock Conf Register
+#define RALINK_PCM_CLK_EN		(1<<11)
+#define RALINK_I2S_CLK_EN		(1<<17)
 #define RALINK_UPHY0_CLK_EN		(1<<25)
 #define RALINK_UPHY1_CLK_EN		(1<<22)
 #define RALINK_PCIE0_CLK_EN		(1<<26)
 #define RALINK_PCIE1_CLK_EN		(1<<27)
+#define RALINK_CRYPTO_CLK_EN		(1<<29)
+#define RALINK_SDXC_CLK_EN		(1<<30)
 
 //CPU PLL CFG Register
 #define CPLL_SW_CONFIG                  (0x1UL << 31)
