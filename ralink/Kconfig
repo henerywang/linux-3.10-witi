@@ -9,7 +9,14 @@ source "drivers/net/rt_rdm/Kconfig"
 # Wire
 #############
 
+if RALINK_MT7621 = "y"
+source "drivers/net/raeth_sdk/Kconfig"
+endif
+
+if RALINK_MT7621 != "y"
 source "drivers/net/raeth/Kconfig"
+endif
+
 
 config  HW_IPSEC
 	depends on RALINK_MT7621
@@ -401,7 +408,14 @@ bool "Hardware"
 depends on !RALINK_RT5350 && !RALINK_MT7628
 endchoice
 
+
+if RALINK_MT7621 = "y"
+source "net/nat/hw_nat_sdk/Kconfig"
+endif
+
+if RALINK_MT7621 != "y"
 source "net/nat/hw_nat/Kconfig"
+endif
 
 
 endmenu
