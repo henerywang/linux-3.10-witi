@@ -63,7 +63,12 @@ obj-$(CONFIG_XEN_NETDEV_FRONTEND) += xen-netfront.o
 obj-$(CONFIG_XEN_NETDEV_BACKEND) += xen-netback/
 
 obj-$(CONFIG_RALINK_RDM) += rt_rdm/
+
+ifeq ($(CONFIG_RALINK_MT7620),y)
 obj-$(CONFIG_RAETH) += raeth/
+else
+obj-$(CONFIG_RAETH) += raeth_sdk/
+endif
 
 obj-$(CONFIG_USB_CATC)          += usb/
 obj-$(CONFIG_USB_KAWETH)        += usb/

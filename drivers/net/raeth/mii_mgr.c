@@ -7,6 +7,7 @@
 
 #include "ra_eth_reg.h"
 #include "mii_mgr.h"
+#include "ra_compat.h"
 
 #define MDIO_TIMEOUT		(100 * 1000)
 

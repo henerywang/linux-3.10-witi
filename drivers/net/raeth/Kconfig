@@ -280,10 +280,10 @@ choice
 	config RAETH_ESW_IGMP_SNOOP_OFF
 	bool "Disable IGMP/MLD snooping"
 
-	config RAETH_ESW_IGMP_SNOOP_SW
-	bool "Software mode IGMP/MLD snooping"
-	depends on BRIDGE_IGMP_SNOOPING
-	select BRIDGE_IGMP_EVENT_HOOK
+#	config RAETH_ESW_IGMP_SNOOP_SW
+#	bool "Software mode IGMP/MLD snooping"
+#	depends on BRIDGE_IGMP_SNOOPING
+#	select BRIDGE_IGMP_EVENT_HOOK
 
 	config RAETH_ESW_IGMP_SNOOP_HW
 	bool "Hardware mode IGMP/MLD snooping"

@@ -65,6 +65,7 @@ u32 mips_cpu_feq;
 u32 ralink_asic_rev_id;
 EXPORT_SYMBOL(ralink_asic_rev_id);
 
+
 /* Environment variable */
 typedef struct {
 	char *name;
@@ -350,7 +351,7 @@ void prom_init_sysclk(void)
 	int xtal = 40;
 	u32 reg, ocp_freq;
 	u8  clk_sel;
-#if defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7620_ASIC) || \
+#if defined (CONFIG_RT5350_ASIC) || defined (CONFIG_MT7620_ASIC) || defined (CONFIG_MT7620_FPGA) || \
     defined (CONFIG_MT7621_ASIC) || defined (CONFIG_MT7628_ASIC)
 	u8  clk_sel2;
 #endif
@@ -392,15 +393,6 @@ void prom_init_sysclk(void)
 	else
 		asic_id[6] = 'K';
 #endif
-#if defined(CONFIG_RT2880_FPGA)
-        mips_cpu_feq = 25000000; 
-#elif defined (CONFIG_RT3052_FPGA) || defined (CONFIG_RT3352_FPGA) || defined (CONFIG_RT2883_FPGA) || defined (CONFIG_RT3883_FPGA) || defined (CONFIG_RT5350_FPGA) 
-        mips_cpu_feq = 40000000; 
-#elif defined (CONFIG_RT6855_FPGA) || defined (CONFIG_MT7620_FPGA) || defined (CONFIG_MT7628_FPGA)
-        mips_cpu_feq = 50000000; 
-#elif defined (CONFIG_MT7621_FPGA)
-        mips_cpu_feq = 50000000;
-#else
 
         reg = (*((volatile u32 *)(RALINK_SYSCTL_BASE + 0x10)));
 
@@ -418,7 +410,7 @@ void prom_init_sysclk(void)
 		xtal = 20;
 #elif defined (CONFIG_RT3883_ASIC) 
         clk_sel = (reg>>8) & 0x03;
-#elif defined (CONFIG_MT7620_ASIC) 
+#elif defined (CONFIG_MT7620_ASIC) || defined (CONFIG_MT7620_FPGA)
 	clk_sel = 0;		/* clock from CPU PLL (600MHz) */
 	clk_sel2 = (reg>>4) & 0x03;
 	if (!(reg & (1UL<<6)))
@@ -628,8 +620,6 @@ void prom_init_sysclk(void)
 #endif
 	}
 
-#endif
-	
 #if defined (CONFIG_RT3883_ASIC) 
 	if ((reg>>17) & 0x1) { //DDR2
 		switch (clk_sel) {
